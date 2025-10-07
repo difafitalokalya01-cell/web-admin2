@@ -1,5 +1,5 @@
-export default function UserPage() {
+export default function TaskPages() {
     return (
-        <h1>This user page</h1>
+        <h1>This task pages</h1>
     )
 }

@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer base {
+  ul li {
+    @apply p-2 rounded-sm hover:shadow hover:bg-blue-400 hover:border font-mono border-blue-400 text-gray-500
+  }
+}

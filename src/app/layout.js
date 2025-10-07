@@ -1,3 +1,5 @@
+import "../styles/globals.css";
+
 export const metadata = {
   title: "Tiktok Task Admin Panel",
   description: "Dashboard untuk mengelola data dan tugas dari Tiktok Task.",
