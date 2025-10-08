@@ -1,6 +1,6 @@
-import Header from "../components/layouts/header";
+import Header from "@/app/components/layouts/header";
 
-export default function Dashboard() {
+export default function BannerPages() {
     return (
         <section className="w-full min-h-screen">
             <Header/>

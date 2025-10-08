@@ -1,10 +1,12 @@
-export const metadata = {
-    title: 'product page',
-    descriptions: 'mengelola produk'
-};
+import Header from "@/app/components/layouts/header";
 
-export default function ProductPage() {
+export default function ProductPages() {
     return (
-        <h1>this product</h1>
+        <section className="w-full min-h-screen">
+            <Header/>
+            <div className="w-full">
+                
+            </div>
+        </section>
     )
 }
