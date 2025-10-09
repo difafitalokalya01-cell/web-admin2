@@ -1,6 +1,6 @@
 import Header from "@/app/components/layouts/header";
 
-export default function WithDrawPages() {
+export default function WithdrawHistoriPage() {
     return (
         <section className="w-full min-h-screen">
             <Header/>

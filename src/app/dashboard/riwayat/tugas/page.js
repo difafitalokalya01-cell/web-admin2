@@ -1,6 +1,6 @@
 import Header from "@/app/components/layouts/header";
 
-export default function TopUpPages() {
+export default function TasktHistoriPage() {
     return (
         <section className="w-full min-h-screen">
             <Header/>

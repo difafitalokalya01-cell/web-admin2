@@ -1,4 +1,4 @@
-import ContentPage from "./components/content"
+import ContentUserPage from "./components/content"
 
 export default function UserPage() {
       const data = [
@@ -63,7 +63,7 @@ export default function UserPage() {
 
     return (
         <section className="h-full">
-            <ContentPage dataUsers={data}/>
+            <ContentUserPage dataUsers={data}/>
         </section>
     )
 }

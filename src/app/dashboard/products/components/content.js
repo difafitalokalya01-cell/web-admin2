@@ -6,7 +6,7 @@ import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
 import Image from "next/image";
 
-export default function ContentProduct({ products }) {
+export default function ContentProductPage({ products }) {
   const itemsPerPage = 12;
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -20,7 +20,6 @@ export default function ContentProduct({ products }) {
 
   return (
     <div className="mb-4 bg-white rounded-md p-3 space-y-4">
-      {/* Header dan Tombol Tambah */}
       <div className="flex justify-between items-center">
         <button className="lg:hidden">
           <Image src={AddIcon} alt="Tambah" width={24} height={24} />
@@ -30,14 +29,12 @@ export default function ContentProduct({ products }) {
         </button>
       </div>
 
-      {/* Grid Produk */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {currentPageData.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
 
-      {/* Pagination */}
       {pageCount > 1 && (
         <div className="flex justify-center mt-6">
           <ReactPaginate
@@ -60,7 +57,6 @@ export default function ContentProduct({ products }) {
         </div>
       )}
 
-      {/* Jika Tidak Ada Produk */}
       {products.length === 0 && (
         <p className="text-center text-gray-500 py-8">Tidak ada produk.</p>
       )}

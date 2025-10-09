@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -15,21 +16,29 @@ import Banner from "@/assets/icons/navbarIcons/advertisement.png";
 import Setting from "@/assets/icons/navbarIcons/setting-admin.png";
 import Home from "@/assets/icons/navbarIcons/home.png";
 import ArrowRight from "@/assets/icons/navbarIcons/right-arrow.png";
+import Histori from "@/assets/icons/navbarIcons/restore.png";
+import Display from "@/assets/icons/navbarIcons/monitor.png";
 
 export default function RootDashboard({ children }) {
   const pathName = usePathname();
+  const [openHistory, setOpenHistory] = useState(false);
 
   const navListItems = [
-    { title: "Home", path: "/dashboard", icondefault: Home, iconRight: ArrowRight },
-    { title: "Users", path: "/dashboard/users", icondefault: Users, iconRight: ArrowRight },
-    { title: "Permintaan Tugas", path: "/dashboard/task", icondefault: TaskIcon, iconRight: ArrowRight },
-    { title: "Top-up", path: "/dashboard/top-up", icondefault: TopupIcon, iconRight: ArrowRight },
-    { title: "Withdraw", path: "/dashboard/withdraw", icondefault: Withdraw, iconRight: ArrowRight },
-    { title: "Contact", path: "/dashboard/contact", icondefault: Contact, iconRight: ArrowRight },
-    { title: "Bank Card", path: "/dashboard/bank-card", icondefault: BankCard, iconRight: ArrowRight },
-    { title: "Products", path: "/dashboard/products", icondefault: Products, iconRight: ArrowRight },
-    { title: "Banner", path: "/dashboard/banner", icondefault: Banner, iconRight: ArrowRight },
-    { title: "Setting", path: "/dashboard/setting", icondefault: Setting, iconRight: ArrowRight },
+    { title: "Home", path: "/dashboard", icondefault: Home },
+    { title: "Users", path: "/dashboard/users", icondefault: Users },
+    { title: "Info Terbaru", path: "/dashboard/informasi", icondefault: TaskIcon },
+    {
+      title: "Riwayat",
+      icondefault: Histori,
+      subMenu: [
+        { title: "Riwayat Tugas", path: "/dashboard/riwayat/tugas", icondefault: TaskIcon },
+        { title: "Riwayat Deposit", path: "/dashboard/riwayat/deposit", icondefault: TopupIcon },
+        { title: "Riwayat Withdraw", path: "/dashboard/riwayat/withdraw", icondefault: Withdraw },
+      ],
+    },
+    { title: "Display", path: "/dashboard/display", icondefault: Display },
+    { title: "Products", path: "/dashboard/products", icondefault: Products },
+    { title: "Setting", path: "/dashboard/setting", icondefault: Setting },
   ];
 
   return (
@@ -48,18 +57,78 @@ export default function RootDashboard({ children }) {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
             {navListItems.map((item) => {
+              if (item.subMenu) {
+                const isParentActive = item.subMenu.some((sub) => pathName === sub.path);
+                return (
+                  <li key={item.title}>
+                    <button
+                      onClick={() => setOpenHistory(!openHistory)}
+                      className={`group flex items-center space-x-3 w-full rounded-lg transition-colors py-2.5 px-3
+                        ${openHistory || isParentActive ? "bg-gradient-to-l from-blue-400 to-blue-200 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                    >
+                      <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
+                        <Image
+                          src={item.icondefault}
+                          alt={`${item.title} icon`}
+                          width={20}
+                          height={20}
+                          className="object-contain"
+                        />
+                      </div>
+
+                      <span className="text-sm font-medium">{item.title}</span>
+
+                      <span className="ml-auto">
+                        <Image
+                          src={ArrowRight}
+                          width={16}
+                          height={16}
+                          alt=""
+                          className={`transition-transform duration-200 ${
+                            openHistory || isParentActive
+                              ? "rotate-90 brightness-0 invert"
+                              : "group-hover:translate-x-0.5"
+                          }`}
+                        />
+                      </span>
+                    </button>
+
+                    {openHistory && (
+                      <ul className="mt-1 ml-10 space-y-1 border-l border-gray-200 pl-3">
+                        {item.subMenu.map((sub) => {
+                          const isActive = pathName === sub.path;
+                          return (
+                            <li key={sub.path}>
+                              <Link
+                                href={sub.path}
+                                className={`flex items-center space-x-3 rounded-md py-2 px-2 text-sm transition-colors
+                                  ${isActive ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-500"}`}
+                              >
+                                <Image
+                                  src={sub.icondefault}
+                                  alt={`${sub.title} icon`}
+                                  width={18}
+                                  height={18}
+                                  className="object-contain"
+                                />
+                                <span>{sub.title}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
+
               const isActive = pathName === item.path;
               return (
                 <li key={item.path}>
                   <Link
                     href={item.path}
-                    className={`
-                      group flex items-center space-x-3 w-full rounded-lg transition-colors
-                      ${isActive
-                        ? "bg-blue-500 text-white"
-                        : "text-gray-700 hover:bg-gray-100"}
-                      py-2.5 px-3
-                    `}
+                    className={`group flex items-center space-x-3 w-full rounded-lg transition-colors
+                      ${isActive ? "bg-gradient-to-l from-blue-400 to-blue-200 text-white" : "text-gray-700 hover:bg-gray-100"} py-2.5 px-3`}
                   >
                     <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
                       <Image
@@ -70,20 +139,19 @@ export default function RootDashboard({ children }) {
                         className="object-contain"
                       />
                     </div>
-
                     <span className="text-sm font-medium">{item.title}</span>
 
                     <span className="ml-auto">
                       <Image
-                        src={item.iconRight}
+                        src={ArrowRight}
                         width={16}
                         height={16}
-                        alt=""
+                        alt="arrow"
                         className={`transition-transform duration-200 ${
-                          isActive
-                            ? "rotate-90 brightness-0 invert"
-                            : "group-hover:translate-x-0.5"
-                        }`}
+                            isActive
+                              ? "rotate-90 brightness-0 invert"
+                              : "group-hover:translate-x-0.5"
+                          }`}
                       />
                     </span>
                   </Link>

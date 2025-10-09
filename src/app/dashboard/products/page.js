@@ -1,6 +1,5 @@
-// app/product/page.js (atau path sesuai struktur kamu)
 import Header from "@/app/components/layouts/header";
-import ContentProduct from "./components/content";
+import ContentProductPage from "./components/content";
 
 export default function ProductPages() {
   const dataProduct = [
@@ -9,7 +8,6 @@ export default function ProductPages() {
     { id: 3, image: '', title: 'susu kedelai', description: 'susu kedelai kacang ijo', price: '27000' },
     { id: 4, image: '', title: 'kondom sutra', description: 'kondom bahan sutera ukuran xxxxxxxl', price: '27000' },
     { id: 5, image: '', title: 'nasi goreng', description: 'nasi di tumis sebenernya...', price: '27000' },
-    // ... tambahkan sampai >12 data untuk uji pagination
     { id: 6, image: '', title: 'Produk 6', description: 'Deskripsi 6', price: '10000' },
     { id: 7, image: '', title: 'Produk 7', description: 'Deskripsi 7', price: '10000' },
     { id: 8, image: '', title: 'Produk 8', description: 'Deskripsi 8', price: '10000' },
@@ -24,7 +22,7 @@ export default function ProductPages() {
     <section className="w-full min-h-screen ">
       <Header />
       <div className="w-full py-2">
-        <ContentProduct products={dataProduct} />
+        <ContentProductPage products={dataProduct} />
       </div>
     </section>
   );
