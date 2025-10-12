@@ -89,13 +89,13 @@ export default function ContentUserPage({ dataUsers }) {
                     <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">
                       <button
                         onClick={() => handleOpenModal(user)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs transition"
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 active:scale-95 rounded-md text-xs transition"
                       >
                         Detail
                       </button>
                       <button
                         onClick={() => handleDelete(user)}
-                        className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded-md text-xs transition"
+                        className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 active:scale-95 rounded-md text-xs transition"
                       >
                         Hapus
                       </button>

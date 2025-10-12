@@ -41,7 +41,7 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick }) {
 
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/30 text-white hover:bg-white/50 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center active:scale-95 rounded-full bg-white/30 text-white hover:bg-white/50 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
           aria-label="Tutup modal"
         >
           <span className="text-xl font-bold">×</span>
@@ -114,7 +114,7 @@ function ActionButton({ onClick, label, color }) {
     <button
       type="button"
       onClick={onClick}
-      className={`${color} w-full py-2.5 px-4 text-white font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white transition-colors`}
+      className={`${color} w-full py-2.5 px-4 text-white active:scale-95 font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white transition-colors`}
     >
       {label}
     </button>

@@ -30,7 +30,7 @@ export default function ProductCard({ product }) {
       </div>
 
       <div className="px-4 pb-4">
-        <button className="w-full bg-blue-300 hover:bg-gradient-to-l hover:from-blue-500 hover:to-blue-300 text-gray-600 border border-blue-300 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button className="w-full bg-blue-300 hover:bg-gradient-to-l hover:from-blue-500 hover:to-blue-300 text-gray-600 border border-blue-300 py-2 rounded-lg text-sm font-medium transition-colors active:scale-95">
           Lihat Detail
         </button>
       </div>

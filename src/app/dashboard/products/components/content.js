@@ -24,7 +24,7 @@ export default function ContentProductPage({ products }) {
         <button className="lg:hidden">
           <Image src={AddIcon} alt="Tambah" width={24} height={24} />
         </button>
-        <button className="bg-blue-300 hover:bg-gradient-to-l hover:from-blue-500 hover:to-blue-300 px-4 py-2 rounded-lg shadow-md text-gray-700 font-medium hidden lg:inline">
+        <button className="bg-blue-300 hover:bg-gradient-to-l hover:from-blue-500 hover:to-blue-300 px-4 py-2 active:scale-95 rounded-lg shadow-md text-gray-700 font-medium hidden lg:inline">
           + Tambah Data
         </button>
       </div>

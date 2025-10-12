@@ -1,5 +1,5 @@
 import Header from "@/app/components/layouts/header";
-import ContentDisplayPage from "./component/modal/content";
+import ContentDisplayPage from "./component/content";
 
 export default function ContactPages() {
     return (

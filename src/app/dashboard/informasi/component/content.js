@@ -91,7 +91,7 @@ export default function ContentTaskPage({dataUsersTask}) {
                     <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">
                       <button
                         onClick={() => handleOpenModal(user)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs transition"
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs transition active:scale-95"
                       >
                         Detil
                       </button>
