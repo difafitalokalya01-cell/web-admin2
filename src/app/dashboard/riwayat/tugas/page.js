@@ -1,12 +1,19 @@
-import Header from "@/app/components/layouts/header";
+import ModalTaskContent from "./component.js/content";
+
+const dataUserTask = [
+    {
+        id: 1,
+        name: 'muhammad yusri',
+        email: 'yusri@gmail.com',
+        keterangan: 'tugas ke',
+        statusTugas: 'belum selesai'
+    }
+]
 
 export default function TasktHistoriPage() {
     return (
         <section className="w-full min-h-screen">
-            <Header/>
-            <div className="w-full">
-                
-            </div>
+            <ModalTaskContent dataUsers={dataUserTask}/>
         </section>
     )
 }

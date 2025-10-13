@@ -10,7 +10,7 @@ export default function DisplayContent() {
 
   // state untuk menampung data form
   const [formData, setFormData] = useState({
-    contact: { platform: "", hp: "" },
+    contact: { platform: "", hp: "", link: "" },
     rekening: { bank: "", nomor: "" },
     banner: { title: "", image: "" },
   });
@@ -49,7 +49,7 @@ export default function DisplayContent() {
       case "Contact":
         return (
           <>
-            <div className="w-full rounded-t-md bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
+            <div className="w-full rounded-t-md bg-gradient-to-l from-blue-600 to-blue-500 p-4 text-white">
               <h2 className="text-xl font-bold">Masukkan Detil Contact</h2>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
@@ -69,6 +69,16 @@ export default function DisplayContent() {
                   type="text"
                   name="hp"
                   value={formData.contact.hp}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 p-2 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Link</label>
+                <input
+                  type="text"
+                  name="link"
+                  value={formData.contact.link}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                 />

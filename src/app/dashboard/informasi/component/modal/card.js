@@ -49,6 +49,7 @@ export default function ModalBoxTaskComponent({ user, onClose, onDeleteClick }) 
       </div>
     </div>
     )
+    
     function InfoRow({ label, value }) {
     return (
     <p className="text-gray-700">
