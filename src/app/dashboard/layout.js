@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 import TaskIcon from "@/assets/icons/navbarIcons/to-do-list.png";
 import TopupIcon from "@/assets/icons/navbarIcons/top-up.png";
@@ -22,6 +24,39 @@ import Display from "@/assets/icons/navbarIcons/monitor.png";
 export default function RootDashboard({ children }) {
   const pathName = usePathname();
   const [openHistory, setOpenHistory] = useState(false);
+  const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const handleLogout = async () => {
+    const toastId = toast.loading("Logging out...");
+    
+    try {
+      await axios.post(`${API_URL}/api/auth/admin/logout`, {}, {
+        withCredentials: true,
+      });
+
+      toast.update(toastId, {
+        render: "Logout berhasil",
+        type: "success",
+        isLoading: false,
+        autoClose: 1000,
+      });
+
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
+    } catch (err) {
+      console.error("Logout API error:", err);
+
+      toast.update(toastId, {
+        render: "Logout gagal, coba lagi",
+        type: "error",
+        isLoading: false,
+        autoClose: 1500,
+      });
+    }
+  };
+
 
   const navListItems = [
     { title: "Home", path: "/dashboard", icondefault: Home },
@@ -160,6 +195,19 @@ export default function RootDashboard({ children }) {
             })}
           </ul>
         </nav>
+        <div className="px-3 py-4 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className="group flex items-center space-x-3 w-full rounded-lg bg-red-50 hover:bg-red-100 text-red-700 transition-colors py-2.5 px-3"
+          >
+            <div className="flex items-center justify-center w-9 h-9 rounded-md bg-red-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+        </div>  
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden">

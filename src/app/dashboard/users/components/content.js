@@ -2,9 +2,11 @@
 
 import Header from "@/app/components/layouts/header";
 import ModalBoxDataUsers from "./modal/modalComponent";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ConfirmPopup from "@/app/components/modal/modalConfirm";
 import ReactPaginate from "react-paginate";
+import axios from "@/app/lib/axios";
+import { toast } from "react-toastify";
 
 export default function ContentUserPage({ dataUsers }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -13,11 +15,12 @@ export default function ContentUserPage({ dataUsers }) {
   const [userToDelete, setUserToDelete] = useState(null);
   const usersPerPage = 50;
   const [pageNumber, setPageNumber] = useState(0);
+  const [users, setUsers] = useState(dataUsers);
 
-  const pageCount = Math.ceil(dataUsers.length / usersPerPage);
+  const pageCount = Math.ceil(users.length / usersPerPage);
 
   const pagesVisited = pageNumber * usersPerPage;
-  const displayUsers = dataUsers.slice(pagesVisited, pagesVisited + usersPerPage);
+  const displayUsers = users.slice(pagesVisited, pagesVisited + usersPerPage);
 
   const changePage = ({ selected }) => {
     setPageNumber(selected);
@@ -38,6 +41,30 @@ export default function ContentUserPage({ dataUsers }) {
     setIsConfirmOpen(true);
   };
 
+useEffect(() => {
+  async function handleGetAllUsers() {
+
+    try {
+      const res = await axios.get("/api/admin/user-data", {});
+
+      setUsers(res.data.usersData);
+
+    } catch (err) {
+      console.error("Get users error:", err);
+
+      const msg = err.response?.data?.message || "Data user tidak tersedia";
+
+    }
+  }
+  handleGetAllUsers();
+  const interval =setInterval(handleGetAllUsers, 10000);
+
+  return () => (clearInterval(interval));
+
+}, []);
+
+console.log(users);
+  
   const handleConfirmDelete = () => {
     if (userToDelete) {
       // 🔥 Lakukan logika hapus di sini (misal: panggil API)

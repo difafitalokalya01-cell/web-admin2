@@ -56,18 +56,15 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick }) {
               <InfoRow label="Nomor HP" value={user.phone || '—'} />
               <InfoRow label="Kategori" value={user.category || '—'} />
               <InfoRow label="Terakhir Login" value={user.terakhirLogin || '—'} />
-              <InfoRow label="Tanggal Daftar" value={user.tanggalDaftar || '—'} />
+              <InfoRow label="Tanggal Daftar" value={user.createdAt || '—'} />
               <InfoRow label="Bank Akun" value={user.bankAccount || '—'} />
             </div>
 
             <div className="flex-shrink-0 flex justify-center">
               <img
-                src={user.images || ''}
+                src={`${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}`}
                 alt={`${user.username} avatar`}
                 className="h-20 w-20 rounded-full border-2 border-gray-200 object-cover shadow-sm"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder-avatar.png';
-                }}
               />
             </div>
           </div>
