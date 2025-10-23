@@ -94,6 +94,9 @@ console.log(users);
                 <th className="px-3 py-2 hidden md:table-cell">Email</th>
                 <th className="px-3 py-2 hidden md:table-cell">Nomor HP</th>
                 <th className="px-3 py-2 hidden md:table-cell">Terakhir Login</th>
+                <th className="px-3 py-2 hidden md:table-cell">Tanggal Daftar</th>
+                <th className="px-3 py-2 hidden md:table-cell">No Rekening</th>
+                <th className="px-3 py-2 hidden md:table-cell">Password</th>
                 <th className="px-3 py-2">Kategori</th>
                 <th className="px-3 py-2 text-center">Aksi</th>
               </tr>
@@ -107,11 +110,14 @@ console.log(users);
                     className="hover:bg-blue-50 transition-colors duration-150 border-b border-gray-300"
                   >
                     <td className="px-3 py-2 text-center">{globalIndex}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.id}</td>
-                    <td className="px-3 py-2">{user.username}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.email}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.phone}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.terakhirLogin}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.id}</td>
+                    <td className="px-3 py-2 max-w-[150px] truncate">{user.username}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.email}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.phone}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.terakhirLogin}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.createdAt}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.accountBank}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.password}</td>
                     <td className="px-3 py-2">{user.category}</td>
                     <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">
                       <button

@@ -1,6 +1,7 @@
 'use client'
 
 import adminIcon from "@/assets/icons/loginIcons/human-white.png";
+import ConfirmPopup from "../components/modal/modalConfirm";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -26,8 +27,6 @@ export default function Home() {
         try{
 
             const response = await axios.post(`${API_URL}/api/auth/admin/login`, formData);
-            console.log("📩 Response headers:", response.headers);
-            console.log("🍪 Cookies:", document.cookie);
             
             setFormData((prev) => ({
                 ...prev,

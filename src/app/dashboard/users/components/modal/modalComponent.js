@@ -1,12 +1,14 @@
+'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
+import ModalEditUserData from './modal.edit.user';
 
 export default function ModalBoxDataUsers({ user, onClose, onDeleteClick }) {
   if (!user) return null;
+  const [isOpenModal, setIsOpenModal] = useState(false);
 
   const handleEdit = () => {
-    // TODO: buka form edit
-    console.log('Edit akun:', user.id);
+    setIsOpenModal(true);
   };
 
   const handleLock = () => {
@@ -54,10 +56,11 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick }) {
               <InfoRow label="Username" value={user.username} />
               <InfoRow label="Email" value={user.email} />
               <InfoRow label="Nomor HP" value={user.phone || '—'} />
-              <InfoRow label="Kategori" value={user.category || '—'} />
               <InfoRow label="Terakhir Login" value={user.terakhirLogin || '—'} />
               <InfoRow label="Tanggal Daftar" value={user.createdAt || '—'} />
               <InfoRow label="Bank Akun" value={user.bankAccount || '—'} />
+              <InfoRow label="Bank Akun" value={user.password || '—'} />
+              <InfoRow label="Kategori" value={user.categori || '—'} />
             </div>
 
             <div className="flex-shrink-0 flex justify-center">
@@ -93,6 +96,9 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick }) {
           />
         </div>
       </div>
+      {isOpenModal && (
+        <ModalEditUserData onClose={onClose} user={user}/>
+      )}
     </div>
   );
 }
