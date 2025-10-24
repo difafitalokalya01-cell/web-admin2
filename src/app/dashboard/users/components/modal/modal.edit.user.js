@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 
 export default function ModalEditUserData({ user, onClose }) {
   const [formData, setFormData] = useState({
+    id: "",
     username: "",
     email: "",
     phone: "",
@@ -16,6 +17,7 @@ export default function ModalEditUserData({ user, onClose }) {
   useEffect(() => {
     if (user) {
       setFormData({
+        id: user.id || "",
         username: user.username || "",
         email: user.email || "",
         phone: user.phone || "",
@@ -33,10 +35,9 @@ export default function ModalEditUserData({ user, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const toastId = toast.loading("Loading...");
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
     try {
 
-        const response = await axios.put(`${API_URL}/api/admin/user-data/update`, formData);
+        const response = await axios.put(`/api/admin/user-data/update`, formData);
     
         toast.update(toastId, {
           render: "Edit data berhasil",
@@ -44,6 +45,8 @@ export default function ModalEditUserData({ user, onClose }) {
           isLoading: false,
           autoClose: 2000
         });
+
+        onClose();
 
     } catch (err) {
       console.error(err);
@@ -141,7 +144,7 @@ export default function ModalEditUserData({ user, onClose }) {
             </label>
             <input
               type="text"
-              name="phone"
+              name="categori"
               value={formData.categori}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -154,7 +157,7 @@ export default function ModalEditUserData({ user, onClose }) {
             </label>
             <input
               type="text"
-              name="phone"
+              name="accountBank"
               value={formData.accountBank}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"

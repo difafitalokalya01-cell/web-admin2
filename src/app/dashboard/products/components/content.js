@@ -5,10 +5,12 @@ import ReactPaginate from "react-paginate";
 import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
 import Image from "next/image";
+import { AddProductModal } from "./modal/tambah.product";
 
 export default function ContentProductPage({ products }) {
   const itemsPerPage = 12;
   const [currentPage, setCurrentPage] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const offset = currentPage * itemsPerPage;
   const currentPageData = products.slice(offset, offset + itemsPerPage);
@@ -21,10 +23,17 @@ export default function ContentProductPage({ products }) {
   return (
     <div className="mb-4 bg-white rounded-md p-3 space-y-4">
       <div className="flex justify-between items-center">
-        <button className="lg:hidden">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="lg:hidden"
+          aria-label="Tambah produk"
+        >
           <Image src={AddIcon} alt="Tambah" width={24} height={24} />
         </button>
-        <button className="bg-blue-300 hover:bg-gradient-to-l hover:from-blue-500 hover:to-blue-300 px-4 py-2 active:scale-95 rounded-lg shadow-md text-gray-700 font-medium hidden lg:inline">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-300 hover:bg-gradient-to-l hover:from-blue-500 hover:to-blue-300 px-4 py-2 active:scale-95 rounded-lg shadow-md text-gray-700 font-medium hidden lg:inline"
+        >
           + Tambah Data
         </button>
       </div>
@@ -60,6 +69,11 @@ export default function ContentProductPage({ products }) {
       {products.length === 0 && (
         <p className="text-center text-gray-500 py-8">Tidak ada produk.</p>
       )}
+
+      <AddProductModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

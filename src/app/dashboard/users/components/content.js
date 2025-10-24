@@ -22,6 +22,8 @@ export default function ContentUserPage({ dataUsers }) {
   const pagesVisited = pageNumber * usersPerPage;
   const displayUsers = users.slice(pagesVisited, pagesVisited + usersPerPage);
 
+  console.log(users);
+
   const changePage = ({ selected }) => {
     setPageNumber(selected);
   };
@@ -41,38 +43,57 @@ export default function ContentUserPage({ dataUsers }) {
     setIsConfirmOpen(true);
   };
 
-useEffect(() => {
-  async function handleGetAllUsers() {
+  useEffect(() => {
+    async function handleGetAllUsers() {
 
-    try {
-      const res = await axios.get("/api/admin/user-data", {});
+      try {
+        const res = await axios.get("/api/admin/user-data");
 
-      setUsers(res.data.usersData);
+        setUsers(res.data.usersData);
 
-    } catch (err) {
-      console.error("Get users error:", err);
+      } catch (err) {
+        console.error("Get users error:", err);
 
-      const msg = err.response?.data?.message || "Data user tidak tersedia";
+        const msg = err.response?.data?.message || "Data user tidak tersedia";
 
+      }
     }
-  }
-  handleGetAllUsers();
-  const interval =setInterval(handleGetAllUsers, 10000);
+    handleGetAllUsers();
+    const interval =setInterval(handleGetAllUsers, 10000);
 
-  return () => (clearInterval(interval));
+    return () => (clearInterval(interval));
 
-}, []);
+  }, []);
 
-console.log(users);
   
-  const handleConfirmDelete = () => {
-    if (userToDelete) {
-      // 🔥 Lakukan logika hapus di sini (misal: panggil API)
-      console.log("Menghapus pengguna:", userToDelete.id);
-      // Contoh: onDeleteUser(userToDelete.id);
+  const handleConfirmDeleteById = async () => {
+
+    const toastId = toast.loading('Loading...');
+    
+    try {
+
+      const response = await axios.delete(`api/admin/user-data/${userToDelete.id}`);
+
+      toast.update(toastId, {
+        render: "User berhasil dihapus",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000
+      });
+
+      setIsConfirmOpen(false);
+      setUserToDelete(null);
+
+    } catch(err) {
+      console.log(err);
+      toast.update(toastId, {
+        render: "Gagal hapus user",
+        type: "error",
+        isLoading: false,
+        autoClose: 2000
+      })
     }
-    setIsConfirmOpen(false);
-    setUserToDelete(null);
+
   };
 
   const handleCancelDelete = () => {
@@ -171,6 +192,7 @@ console.log(users);
             user={selectedUser}
             onClose={handleCloseModal}
             onDeleteClick={handleDelete}
+            onConfirm = {handleConfirmDeleteById}
           />
         )}
 
@@ -178,7 +200,7 @@ console.log(users);
           <ConfirmPopup
             isOpen={isConfirmOpen}
             message="Apakah Anda yakin akan menghapus akun ini?"
-            onConfirm={handleConfirmDelete}
+            onConfirm={handleConfirmDeleteById}
             onCancel={handleCancelDelete}
           />
         )}
