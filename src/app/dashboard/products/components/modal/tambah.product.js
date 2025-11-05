@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "react-toastify";
-import axios from "@/app/lib/axios";
 
 export function AddProductModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({

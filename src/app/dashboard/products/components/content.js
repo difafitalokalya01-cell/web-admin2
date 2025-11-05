@@ -6,6 +6,7 @@ import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
 import Image from "next/image";
 import { AddProductModal } from "./modal/tambah.product";
+import axios from "@/app/lib/axios";
 
 export default function ContentProductPage({ products }) {
   const itemsPerPage = 12;
@@ -19,6 +20,11 @@ export default function ContentProductPage({ products }) {
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
   };
+
+  const handleAddProduct = async (payload) => {
+    return await axios.post("/api/products/add", payload);
+  };
+
 
   return (
     <div className="mb-4 bg-white rounded-md p-3 space-y-4">
@@ -73,6 +79,7 @@ export default function ContentProductPage({ products }) {
       <AddProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAddProduct}
       />
     </div>
   );
