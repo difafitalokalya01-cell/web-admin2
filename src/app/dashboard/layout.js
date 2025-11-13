@@ -10,11 +10,8 @@ import { toast } from "react-toastify";
 import TaskIcon from "@/assets/icons/navbarIcons/to-do-list.png";
 import TopupIcon from "@/assets/icons/navbarIcons/top-up.png";
 import Withdraw from "@/assets/icons/navbarIcons/withdrawal.png";
-import Contact from "@/assets/icons/navbarIcons/settings.png";
-import BankCard from "@/assets/icons/navbarIcons/credit-card.png";
 import Users from "@/assets/icons/navbarIcons/user-settings.png";
 import Products from "@/assets/icons/navbarIcons/loading.png";
-import Banner from "@/assets/icons/navbarIcons/advertisement.png";
 import Setting from "@/assets/icons/navbarIcons/setting-admin.png";
 import Home from "@/assets/icons/navbarIcons/home.png";
 import ArrowRight from "@/assets/icons/navbarIcons/right-arrow.png";
@@ -24,7 +21,6 @@ import Display from "@/assets/icons/navbarIcons/monitor.png";
 export default function RootDashboard({ children }) {
   const pathName = usePathname();
   const [openHistory, setOpenHistory] = useState(false);
-  const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleLogout = async () => {

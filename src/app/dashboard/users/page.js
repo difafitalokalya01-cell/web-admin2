@@ -1,5 +1,5 @@
-import ContentUserPage from "./components/content";
-import axios from "@/app/lib/axios";
+import ContentUserPage from "./components/content.js";
+import axios from "@/app/lib/axios.js";
 import { cookies } from "next/headers";
 
 export default async function UserPage() {

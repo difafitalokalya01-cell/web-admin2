@@ -1,14 +1,24 @@
 "use client";
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export default function ProductCard({ product }) {
+  const imageUrl = product?.imageUrl
+    ? `${BASE_URL}/uploads${product.imageUrl}`
+    : null;
+
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border-gray-100 flex flex-col">
-      <div className="bg-gray-200 h-48 flex items-center justify-center ">
-        {product.image ? (
+      <div className="bg-gray-200 h-48 flex items-center justify-center">
+        {imageUrl ? (
           <img
-            src={product.image}
-            alt={product.name}
+            src={imageUrl}
+            alt={product.name || "Product image"}
             className="object-contain w-full h-full"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/no-image.png";
+            }}
           />
         ) : (
           <span className="text-gray-500 text-lg">No Image</span>
@@ -17,14 +27,17 @@ export default function ProductCard({ product }) {
 
       <div className="p-4 flex-grow flex flex-col">
         <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">
-          {product.title}
+          {product.name}
         </h3>
         <p className="text-gray-600 text-sm mb-3 flex-grow line-clamp-2">
           {product.description}
         </p>
+        <p className="text-gray-600 text-sm mb-3 flex-grow line-clamp-2">
+          {product.storeLocation}
+        </p>
         <div className="mt-auto">
           <p className="text-lg font-bold">
-            {product.price ? `Rp ${product.price.toLocaleString()}` : '—'}
+            {product.price ? `Rp ${product.price.toLocaleString()}` : "—"}
           </p>
         </div>
       </div>
