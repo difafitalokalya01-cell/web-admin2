@@ -22,8 +22,6 @@ export default function ContentUserPage({ dataUsers }) {
   const pagesVisited = pageNumber * usersPerPage;
   const displayUsers = users.slice(pagesVisited, pagesVisited + usersPerPage);
 
-  console.log(users);
-
   const changePage = ({ selected }) => {
     setPageNumber(selected);
   };
