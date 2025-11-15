@@ -51,9 +51,6 @@ export default function ContentUserPage({ dataUsers }) {
 
       } catch (err) {
         console.error("Get users error:", err);
-
-        const msg = err.response?.data?.message || "Data user tidak tersedia";
-
       }
     }
     handleGetAllUsers();

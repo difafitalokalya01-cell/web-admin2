@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -21,7 +21,13 @@ import Display from "@/assets/icons/navbarIcons/monitor.png";
 export default function RootDashboard({ children }) {
   const pathName = usePathname();
   const [openHistory, setOpenHistory] = useState(false);
+  const [activePath, setActivePath] = useState(null); // untuk efek klik instan
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  // Sinkronkan activePath dengan pathName saat halaman termount / berubah
+  useEffect(() => {
+    setActivePath(pathName);
+  }, [pathName]);
 
   const handleLogout = async () => {
     const toastId = toast.loading("Logging out...");
@@ -53,6 +59,17 @@ export default function RootDashboard({ children }) {
     }
   };
 
+  // Fungsi untuk handle klik pada link (non-submenu)
+  const handleNavClick = (path) => {
+    setActivePath(path);
+    // Opsional: reset setelah delay (jika navigasi gagal, tetap tunjukkan aktif sesaat)
+    // Tapi biasanya navigasi sukses, jadi `useEffect` di atas akan override dengan pathName
+  };
+
+  // Fungsi untuk handle klik submenu
+  const handleSubNavClick = (path) => {
+    setActivePath(path);
+  };
 
   const navListItems = [
     { title: "Home", path: "/dashboard", icondefault: Home },
@@ -72,6 +89,11 @@ export default function RootDashboard({ children }) {
     { title: "Setting", path: "/dashboard/setting", icondefault: Setting },
   ];
 
+  // Helper: cek apakah aktif
+  const isActive = (path) => {
+    return activePath === path;
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="lg:hidden fixed top-4 left-4 z-10">
@@ -89,7 +111,7 @@ export default function RootDashboard({ children }) {
           <ul className="space-y-1">
             {navListItems.map((item) => {
               if (item.subMenu) {
-                const isParentActive = item.subMenu.some((sub) => pathName === sub.path);
+                const isParentActive = item.subMenu.some((sub) => isActive(sub.path));
                 return (
                   <li key={item.title}>
                     <button
@@ -127,13 +149,14 @@ export default function RootDashboard({ children }) {
                     {openHistory && (
                       <ul className="mt-1 ml-10 space-y-1 border-l border-gray-200 pl-3">
                         {item.subMenu.map((sub) => {
-                          const isActive = pathName === sub.path;
+                          const active = isActive(sub.path);
                           return (
                             <li key={sub.path}>
                               <Link
                                 href={sub.path}
+                                onClick={() => handleSubNavClick(sub.path)}
                                 className={`flex items-center space-x-3 rounded-md py-2 px-2 text-sm transition-colors
-                                  ${isActive ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-500"}`}
+                                  ${active ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-500"}`}
                               >
                                 <Image
                                   src={sub.icondefault}
@@ -153,13 +176,14 @@ export default function RootDashboard({ children }) {
                 );
               }
 
-              const isActive = pathName === item.path;
+              const active = isActive(item.path);
               return (
                 <li key={item.path}>
                   <Link
                     href={item.path}
+                    onClick={() => handleNavClick(item.path)}
                     className={`group flex items-center space-x-3 w-full rounded-lg transition-colors
-                      ${isActive ? "bg-gradient-to-l from-blue-400 to-blue-200 text-white" : "text-gray-700 hover:bg-gray-100"} py-2.5 px-3`}
+                      ${active ? "bg-gradient-to-l from-blue-400 to-blue-200 text-white" : "text-gray-700 hover:bg-gray-100"} py-2.5 px-3`}
                   >
                     <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
                       <Image
@@ -179,10 +203,10 @@ export default function RootDashboard({ children }) {
                         height={16}
                         alt="arrow"
                         className={`transition-transform duration-200 ${
-                            isActive
-                              ? "rotate-90 brightness-0 invert"
-                              : "group-hover:translate-x-0.5"
-                          }`}
+                          active
+                            ? "rotate-90 brightness-0 invert"
+                            : "group-hover:translate-x-0.5"
+                        }`}
                       />
                     </span>
                   </Link>

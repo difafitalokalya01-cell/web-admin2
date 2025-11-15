@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
@@ -12,10 +12,11 @@ export default function ContentProductPage({ products }) {
   const itemsPerPage = 12;
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [allProducts, setAllProducts] = useState(products);
 
   const offset = currentPage * itemsPerPage;
-  const currentPageData = products.slice(offset, offset + itemsPerPage);
-  const pageCount = Math.ceil(products.length / itemsPerPage);
+  const currentPageData = allProducts.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(allProducts.length / itemsPerPage);
 
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
@@ -24,6 +25,30 @@ export default function ContentProductPage({ products }) {
   const handleAddProduct = async (payload) => {
     return await axios.post("/api/products/add", payload);
   };
+
+  useEffect(() => {
+    async function getAllProducts() {
+
+      try{
+        
+        const product = await axios.get("/api/products/getProducts");
+        
+        setAllProducts(product.data.data);
+
+      } catch(err) {
+
+        console.error(err);
+
+      }
+    }
+
+    getAllProducts()
+
+    const interval = setInterval(getAllProducts, 10000);
+
+    return () => (clearInterval(interval));
+
+  }, []);
 
 
   return (
@@ -45,8 +70,8 @@ export default function ContentProductPage({ products }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {currentPageData.map((product) => (
-          <ProductCard key={product.id} product={product} />
+        {currentPageData.map((allProducts) => (
+          <ProductCard key={allProducts.id} product={allProducts} />
         ))}
       </div>
 
@@ -72,7 +97,7 @@ export default function ContentProductPage({ products }) {
         </div>
       )}
 
-      {products.length === 0 && (
+      {allProducts.length === 0 && (
         <p className="text-center text-gray-500 py-8">Tidak ada produk.</p>
       )}
 
