@@ -2,14 +2,22 @@
 
 import ModalButton from './modal/modalButtonDisplay';
 import ModalBoxDisplayComponent from './modal/modalBoxComponent';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from '@/app/lib/axios';
+import { TrashIcon } from '@heroicons/react/24/outline';
+import ConfirmPopup from '@/app/components/modal/modalConfirm';
 
 export default function DisplayContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
+  const [contacts, setContacts] = useState([]);
+  const [rekenings, setRekenings] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
 
   const [formData, setFormData] = useState({
     contact: { platform: '', number: '', link: '' },
@@ -17,22 +25,29 @@ export default function DisplayContent() {
     banner: { title: '', image: '' },
   });
 
-const CONTACT_PLATFORMS = [
-  'WhatsApp',
-  'Telegram'
-];
+  const CONTACT_PLATFORMS = ['WhatsApp', 'Telegram'];
+  const BANKS = ['BCA', 'BRI', 'BNI', 'Mandiri', 'CIMB Niaga', 'BSI', 'Permata', 'Danamon', 'Lainnya'];
 
-const BANKS = [
-  'BCA',
-  'BRI',
-  'BNI',
-  'Mandiri',
-  'CIMB Niaga',
-  'BSI',
-  'Permata',
-  'Danamon',
-  'Lainnya',
-];
+  // ✅ Fungsi reusable untuk ambil semua data
+  const fetchAllData = async () => {
+    try {
+      const [contactRes, rekeningRes, bannerRes] = await Promise.all([
+        axios.get("/api/contact"),
+        axios.get("/api/rekening"),
+        axios.get("/api/banner"),
+      ]);
+      setContacts(contactRes.data.data || []);
+      setRekenings(rekeningRes.data.data || []);
+      setBanners(bannerRes.data.data || []);
+    } catch (error) {
+      console.error("Gagal mengambil ", error);
+      toast.error("Gagal memuat data");
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData(); // ✅ load awal
+  }, []);
 
   const handleOpenModal = (type) => {
     setModalType(type);
@@ -42,6 +57,11 @@ const BANKS = [
   const handleCloseModal = () => {
     setModalType(null);
     setIsModalOpen(false);
+    // Bersihkan preview gambar jika ada
+    if (formData.banner.imagePreview) {
+      URL.revokeObjectURL(formData.banner.imagePreview);
+      setFormData((prev) => ({ ...prev, banner: { ...prev.banner, imagePreview: '' } }));
+    }
   };
 
   const handleChange = (e) => {
@@ -56,22 +76,22 @@ const BANKS = [
   };
 
   const handleBannerImage = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    setFormData((prev) => ({
-      ...prev,
-      banner: {
-        ...prev.banner,
-        imageFile: file,
-        imagePreview: URL.createObjectURL(file),
-      },
-    }));
-  }
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        banner: {
+          ...prev.banner,
+          imageFile: file,
+          imagePreview: URL.createObjectURL(file),
+        },
+      }));
+    }
   };
 
+  // ✅ Perbaikan utama: panggil fetchAllData() setelah sukses
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const toastId = toast.loading("Loading...");
 
     try {
@@ -79,71 +99,41 @@ const BANKS = [
         case "Banner": {
           const payload = new FormData();
           payload.append("title", formData.banner.title);
-
           if (formData.banner.imageFile) {
             payload.append("image", formData.banner.imageFile);
           }
-
           await axios.post("/api/banner", payload, {
             headers: { "Content-Type": "multipart/form-data" },
           });
-
-          toast.update(toastId, {
-            type: "success",
-            render: "Berhasil update data banner",
-            isLoading: false,
-            autoClose: 2000,
-          });
-
           break;
         }
-
         case "Contact": {
           await axios.post("/api/contact", formData.contact);
-
-          toast.update(toastId, {
-            type: "success",
-            render: "Berhasil update data kontak",
-            isLoading: false,
-            autoClose: 2000,
-          });
-
           break;
         }
-
         case "Rekening": {
           await axios.post("/api/rekening", formData.rekening);
-
-          toast.update(toastId, {
-            type: "success",
-            render: "Berhasil update data rekening",
-            isLoading: false,
-            autoClose: 2000,
-          });
-
           break;
         }
       }
 
-      handleCloseModal(); // hanya sukses
-    } catch (error) {
-      console.error(error);
+      // ✅ Perbarui semua data setelah sukses
+      await fetchAllData();
 
-      const status = error.response?.status;
-
-      if(status === 400){
-        toast.update(toastId, {
-        type: "error",
-        render: error.response?.data?.message,
+      toast.update(toastId, {
+        type: "success",
+        render: `Berhasil update data ${modalType.toLowerCase()}`,
         isLoading: false,
         autoClose: 2000,
       });
 
-      }
-
+      handleCloseModal();
+    } catch (error) {
+      console.error(error);
+      const msg = error.response?.data?.message || "Terjadi kesalahan";
       toast.update(toastId, {
         type: "error",
-        render: error.response?.data?.message,
+        render: msg,
         isLoading: false,
         autoClose: 2000,
       });
@@ -179,11 +169,11 @@ const BANKS = [
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition appearance-none bg-white"
                 >
-                <option value="">Pilih platform...</option>
-                {CONTACT_PLATFORMS.map((platform) => (
-                  <option key={platform} value={platform}>
-                    {platform}
-                  </option>
+                  <option value="">Pilih platform...</option>
+                  {CONTACT_PLATFORMS.map((platform) => (
+                    <option key={platform} value={platform}>
+                      {platform}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -258,7 +248,6 @@ const BANKS = [
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Upload Gambar Banner
                 </label>
-
                 <label
                   htmlFor="bannerUpload"
                   className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition"
@@ -289,7 +278,6 @@ const BANKS = [
 
           <ModalButton
             type="submit"
-            onClick={handleSubmit}
             className="w-full bg-blue-600 text-white hover:bg-blue-700 py-2.5 rounded-lg font-medium transition duration-200"
           >
             Simpan
@@ -299,65 +287,221 @@ const BANKS = [
     );
   };
 
+  const openConfirm = (type, id, label) => {
+    setDeleteTarget({ type, id });
+    setConfirmMessage(`Hapus ${label} ini?`);
+    setConfirmOpen(true);
+  };
+
+  const closeConfirm = () => {
+    setConfirmOpen(false);
+    setDeleteTarget(null);
+  };
+
+  // ✅ Perbaikan: hapus juga panggil fetchAllData() setelah delete
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { type, id } = deleteTarget;
+    const toastId = toast.loading("Menghapus...");
+
+    try {
+      if (type === "contact") {
+        await axios.delete(`/api/contact/${id}`);
+      } else if (type === "rekening") {
+        await axios.delete(`/api/rekening/${id}`);
+      } else if (type === "banner") {
+        await axios.delete(`/api/banner/${id}`);
+      }
+
+      // ✅ Perbarui data setelah hapus
+      await fetchAllData();
+
+      toast.update(toastId, {
+        type: "success",
+        render: "Data berhasil dihapus",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    } catch (err) {
+      toast.update(toastId, {
+        type: "error",
+        render: "Gagal menghapus data",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    } finally {
+      closeConfirm();
+    }
+  };
+
+  // ✅ Helper untuk URL banner
+  const getBannerImageUrl = (imageUrl) => {
+    // Jika sudah absolute URL (mulai dengan http), gunakan langsung
+    if (imageUrl?.startsWith('http')) return imageUrl;
+    // Jika relative (misal: /uploads/banner.jpg), gabungkan dengan base URL
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    return `${baseUrl}${imageUrl?.startsWith('/') ? '' : '/'}${imageUrl}`;
+  };
+
   return (
     <div className="rounded-md bg-white p-4 md:p-6 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Contact Card */}
+        {/* CONTACT CARD */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="bg-gradient-to-l from-blue-400 to-blue-200 flex items-center justify-between p-4 border-gray-100">
             <h3 className="font-semibold text-gray-800">Kontak</h3>
             <ModalButton
               type="button"
               onClick={() => handleOpenModal('Contact')}
-              className="text-sm bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg font-medium transition"
+              className="text-sm bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg"
             >
               + Tambah
             </ModalButton>
           </div>
-          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-            Belum ada data kontak
-          </div>
+
+          {contacts.length === 0 ? (
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+              Belum ada data kontak
+            </div>
+          ) : (
+            <div className="p-4 space-y-3 max-h-56 overflow-y-auto">
+              {contacts.map((c) => (
+                <div
+                  key={c.id}
+                  className="relative border border-gray-200 p-3 rounded-lg bg-gray-50 space-y-1"
+                >
+                  <button
+                    onClick={() => openConfirm("contact", c.id, "kontak")}
+                    className="absolute top-2 right-2 text-white bg-red-500 p-2 rounded-md hover:bg-red-700 cursor-pointer"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <span className="text-xs text-gray-500">Platform:</span>
+                    <p className="text-sm font-semibold text-gray-800">{c.platform}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Nomor:</span>
+                    <p className="text-sm text-gray-700">{c.number}</p>
+                  </div>
+                  {c.link && (
+                    <div>
+                      <span className="text-xs text-gray-500">Link:</span>
+                      <p className="text-sm text-blue-600 underline break-all">{c.link}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Rekening Card */}
+        {/* REKENING CARD */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="bg-gradient-to-l from-blue-400 to-blue-200 flex items-center justify-between p-4 border-gray-100">
             <h3 className="font-semibold text-gray-800">Rekening</h3>
             <ModalButton
               type="button"
               onClick={() => handleOpenModal('Rekening')}
-              className="text-sm bg-blue-600 text-white hover:bg-blue-700px-3 py-1.5 rounded-lg font-medium transition"
+              className="text-sm bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg"
             >
               + Tambah
             </ModalButton>
           </div>
-          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-            Belum ada data rekening
-          </div>
+
+          {rekenings.length === 0 ? (
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
+              Belum ada data rekening
+            </div>
+          ) : (
+            <div className="p-4 space-y-3 max-h-56 overflow-y-auto">
+              {rekenings.map((r) => (
+                <div
+                  key={r.id}
+                  className="relative border border-gray-200 p-3 rounded-lg bg-gray-50 space-y-1"
+                >
+                  <button
+                    onClick={() => openConfirm("rekening", r.id, "rekening")}
+                    className="absolute top-2 right-2 text-white bg-red-500 p-2 rounded-md hover:bg-red-700 cursor-pointer"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <span className="text-xs text-gray-500">Nama Bank:</span>
+                    <p className="text-sm font-semibold text-gray-800">{r.bankName}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Nomor Rekening:</span>
+                    <p className="text-sm text-gray-700">{r.accountNumber}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Banner Card (full width on mobile, col-span-2 on desktop) */}
+        {/* BANNER CARD */}
         <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="bg-gradient-to-l from-blue-400 to-blue-200 flex items-center justify-between p-4 border-gray-100">
             <h3 className="font-semibold text-gray-800">Banner</h3>
             <ModalButton
               type="button"
               onClick={() => handleOpenModal('Banner')}
-              className="text-sm bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg font-medium transition"
+              className="text-sm bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg"
             >
               + Tambah
             </ModalButton>
           </div>
-          <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-            Belum ada banner
-          </div>
+
+          {banners.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+              Belum ada banner
+            </div>
+          ) : (
+            <div className="p-4 space-y-3 max-h-100 overflow-y-auto">
+              {banners.map((b) => (
+                <div
+                  key={b.id}
+                  className="relative border border-gray-200 p-3 rounded-lg bg-gray-50 space-y-1"
+                >
+                  <button
+                    onClick={() => openConfirm("banner", b.id, "banner")}
+                    className="absolute top-2 right-2 text-white bg-red-500 p-2 rounded-md hover:bg-red-700 cursor-pointer"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <span className="text-xs text-gray-500">Judul:</span>
+                    <p className="text-sm font-semibold">{b.title}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Banner:</span>
+                    <img
+                      src={getBannerImageUrl(b.imageUrl)}
+                      alt={b.title}
+                      className="w-full h-32 object-cover rounded mt-1"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Modal */}
       <ModalBoxDisplayComponent isOpen={isModalOpen} onClose={handleCloseModal}>
         {renderModalContent()}
       </ModalBoxDisplayComponent>
+
+      {confirmOpen && (
+        <ConfirmPopup
+          isOpen={confirmOpen}
+          message={confirmMessage}
+          onCancel={closeConfirm}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }
