@@ -17,6 +17,8 @@ export default async function ProductPages() {
 
   const dataProduct = res.data.data;
 
+  console.log(dataProduct);
+
   return (
     <section className="w-full min-h-screen ">
       <Header />

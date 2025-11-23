@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "react-toastify";
@@ -8,7 +10,7 @@ export function AddProductModal({ isOpen, onClose, onSubmit }) {
     price: "",
     description: "",
     storeLocation: "",
-    imageFile: null, 
+    imageFile: null,
     imagePreview: null,
   });
 
@@ -22,7 +24,7 @@ export function AddProductModal({ isOpen, onClose, onSubmit }) {
     if (file) {
       setFormData((prev) => ({
         ...prev,
-        imageFile: file, 
+        imageFile: file,
         imagePreview: URL.createObjectURL(file),
       }));
     }
@@ -55,6 +57,7 @@ export function AddProductModal({ isOpen, onClose, onSubmit }) {
 
       await onSubmit(payload);
 
+      // Reset form
       setFormData({
         name: "",
         price: "",
@@ -71,7 +74,6 @@ export function AddProductModal({ isOpen, onClose, onSubmit }) {
         isLoading: false,
         autoClose: 2000,
       });
-
     } catch (err) {
       console.error("Upload error:", err);
       toast.update(toastId, {
@@ -168,7 +170,6 @@ export function AddProductModal({ isOpen, onClose, onSubmit }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Foto Produk
             </label>
-
             <label
               htmlFor="imageUpload"
               className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition"

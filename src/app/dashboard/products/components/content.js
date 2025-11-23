@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ReactPaginate from "react-paginate";
 import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
@@ -23,33 +23,16 @@ export default function ContentProductPage({ products }) {
   };
 
   const handleAddProduct = async (payload) => {
-    return await axios.post("/api/products/add", payload);
+    const res = await axios.post("/api/products/add", payload);
+    const newProduct = res.data.data;
+    // Tambahkan ke awal daftar
+    setAllProducts((prev) => [newProduct, ...prev]);
   };
 
-  useEffect(() => {
-    async function getAllProducts() {
-
-      try{
-        
-        const product = await axios.get("/api/products/getProducts");
-        
-        setAllProducts(product.data.data);
-
-      } catch(err) {
-
-        console.error(err);
-
-      }
-    }
-
-    getAllProducts()
-
-    const interval = setInterval(getAllProducts, 10000);
-
-    return () => (clearInterval(interval));
-
-  }, []);
-
+  const handleDeleteProduct = (id) => {
+    // Hanya dipanggil setelah API delete sukses
+    setAllProducts((prev) => prev.filter((p) => p.id !== id));
+  };
 
   return (
     <div className="mb-4 bg-white rounded-md p-3 space-y-4">
@@ -70,8 +53,12 @@ export default function ContentProductPage({ products }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {currentPageData.map((allProducts) => (
-          <ProductCard key={allProducts.id} product={allProducts} />
+        {currentPageData.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onDeleteSuccess={handleDeleteProduct}
+          />
         ))}
       </div>
 

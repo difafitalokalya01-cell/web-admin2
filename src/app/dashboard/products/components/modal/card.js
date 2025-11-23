@@ -5,59 +5,57 @@ import ConfirmPopup from "@/app/components/modal/modalConfirm";
 import { useState } from "react";
 import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
+
+// Ambil dari env, fallback ke localhost hanya untuk dev
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export default function ProductCard({ product }) {
-  const [productToDelete, setProductToDelete] = useState(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(null);
+export default function ProductCard({ product, onDeleteSuccess }) {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  // ✅ Perbaikan: jangan tambahkan /uploads lagi jika sudah ada di imageUrl
   const imageUrl = product?.imageUrl
-    ? `${BASE_URL}/uploads${product.imageUrl}`
+    ? `${BASE_URL}${product.imageUrl}` // langsung gunakan path lengkap dari backend
     : null;
 
-
-  const handleDelete = (product) => {
-    console.log(product);
-    setProductToDelete(product);
+  const handleDelete = () => {
     setIsConfirmOpen(true);
   };
 
   const handleCancelDelete = () => {
     setIsConfirmOpen(false);
-    setProductToDelete(null);
   };
 
   const handleDeleteById = async () => {
-
-    const toastId = toast.loading('Loading...');
+    const toastId = toast.loading("Menghapus...");
 
     try {
-      const res = await axios.delete(`api/products/${productToDelete.id}`);
+      // ✅ Hapus dari server dulu
+      await axios.delete(`/api/products/${product.id}`);
+
+      // ✅ Baru update UI
+      onDeleteSuccess(product.id);
 
       toast.update(toastId, {
-        render: "Product berhasil dihapus",
+        render: "Produk berhasil dihapus",
         type: "success",
         isLoading: false,
         autoClose: 2000,
-      })
-
-      setIsConfirmOpen(false);
-      setProductToDelete(null);
-
-    } catch(err) {
-
-      toast.update(toastId, {
-        render: "Gagal hapus product",
-        type: "error",
-        isLoading: false,
-        autoClose: 2000
       });
 
+      setIsConfirmOpen(false);
+    } catch (err) {
+      toast.update(toastId, {
+        render: "Gagal menghapus produk",
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
+      // Tidak panggil onDeleteSuccess → UI tetap konsisten
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border-gray-100 flex flex-col">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col">
       <div className="bg-gray-200 h-48 flex items-center justify-center">
         {imageUrl ? (
           <img
@@ -78,15 +76,15 @@ export default function ProductCard({ product }) {
         <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">
           {product.name}
         </h3>
-        <p className="text-gray-600 text-sm mb-3 flex-grow line-clamp-2">
+        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
           {product.description}
         </p>
-        <p className="text-gray-600 text-sm mb-3 flex-grow line-clamp-2">
+        <p className="text-gray-600 text-sm mb-3">
           {product.storeLocation}
         </p>
         <div className="mt-auto">
           <p className="text-lg font-bold">
-            {product.price ? `Rp ${product.price.toLocaleString()}` : "—"}
+            {product.price ? `Rp ${Number(product.price).toLocaleString("id-ID")}` : "—"}
           </p>
         </div>
       </div>
@@ -96,8 +94,10 @@ export default function ProductCard({ product }) {
           Edit Product
         </button>
 
-        <button onClick={() => handleDelete(product)}
+        <button
+          onClick={handleDelete}
           className="ml-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors active:scale-95"
+          aria-label="Hapus produk"
         >
           <TrashIcon className="w-5 h-5" />
         </button>
@@ -105,7 +105,7 @@ export default function ProductCard({ product }) {
         {isConfirmOpen && (
           <ConfirmPopup
             isOpen={isConfirmOpen}
-            message="Apakah Anda yakin akan menghapus akun ini?"
+            message="Apakah Anda yakin akan menghapus produk ini?"
             onConfirm={handleDeleteById}
             onCancel={handleCancelDelete}
           />

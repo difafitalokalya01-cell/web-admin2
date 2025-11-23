@@ -28,7 +28,6 @@ export default function DisplayContent() {
   const CONTACT_PLATFORMS = ['WhatsApp', 'Telegram'];
   const BANKS = ['BCA', 'BRI', 'BNI', 'Mandiri', 'CIMB Niaga', 'BSI', 'Permata', 'Danamon', 'Lainnya'];
 
-  // ✅ Fungsi reusable untuk ambil semua data
   const fetchAllData = async () => {
     try {
       const [contactRes, rekeningRes, bannerRes] = await Promise.all([
@@ -46,7 +45,7 @@ export default function DisplayContent() {
   };
 
   useEffect(() => {
-    fetchAllData(); // ✅ load awal
+    fetchAllData();
   }, []);
 
   const handleOpenModal = (type) => {
@@ -57,7 +56,6 @@ export default function DisplayContent() {
   const handleCloseModal = () => {
     setModalType(null);
     setIsModalOpen(false);
-    // Bersihkan preview gambar jika ada
     if (formData.banner.imagePreview) {
       URL.revokeObjectURL(formData.banner.imagePreview);
       setFormData((prev) => ({ ...prev, banner: { ...prev.banner, imagePreview: '' } }));
@@ -89,7 +87,6 @@ export default function DisplayContent() {
     }
   };
 
-  // ✅ Perbaikan utama: panggil fetchAllData() setelah sukses
   const handleSubmit = async (e) => {
     e.preventDefault();
     const toastId = toast.loading("Loading...");
@@ -117,7 +114,6 @@ export default function DisplayContent() {
         }
       }
 
-      // ✅ Perbarui semua data setelah sukses
       await fetchAllData();
 
       toast.update(toastId, {
@@ -334,14 +330,14 @@ export default function DisplayContent() {
     }
   };
 
-  // ✅ Helper untuk URL banner
-  const getBannerImageUrl = (imageUrl) => {
-    // Jika sudah absolute URL (mulai dengan http), gunakan langsung
-    if (imageUrl?.startsWith('http')) return imageUrl;
-    // Jika relative (misal: /uploads/banner.jpg), gabungkan dengan base URL
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    return `${baseUrl}${imageUrl?.startsWith('/') ? '' : '/'}${imageUrl}`;
-  };
+const getBannerImageUrl = (imageUrl) => {
+  if (!imageUrl) return '/images/placeholder-banner.png';
+  if (imageUrl.startsWith('http')) return imageUrl;
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
+  const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+  return `${baseUrl}${cleanPath}`;
+};
 
   return (
     <div className="rounded-md bg-white p-4 md:p-6 shadow-sm">
@@ -479,7 +475,7 @@ export default function DisplayContent() {
                     <img
                       src={getBannerImageUrl(b.imageUrl)}
                       alt={b.title}
-                      className="w-full h-32 object-cover rounded mt-1"
+                      className="w-full h-40 object-cover rounded mt-1"
                       onError={(e) => (e.currentTarget.style.display = "none")}
                     />
                   </div>
