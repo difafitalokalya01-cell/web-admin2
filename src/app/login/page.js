@@ -11,7 +11,6 @@ import axios from "../lib/axios";
 export default function Home() {
   const router = useRouter()
     const [ formData, setFormData ] = useState({email:"", password:""});
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const handleChange = (e) => {
         const {name, value} = e.target;
@@ -26,7 +25,7 @@ export default function Home() {
 
         try{
 
-            const response = await axios.post(`${API_URL}/api/auth/admin/login`, formData);
+            const response = await axios.post('/api/auth/admin/login', formData);
             
             setFormData((prev) => ({
                 ...prev,
