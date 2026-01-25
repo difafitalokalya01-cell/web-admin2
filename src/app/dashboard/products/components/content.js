@@ -25,12 +25,10 @@ export default function ContentProductPage({ products }) {
   const handleAddProduct = async (payload) => {
     const res = await axios.post("/api/products/add", payload);
     const newProduct = res.data.data;
-    // Tambahkan ke awal daftar
     setAllProducts((prev) => [newProduct, ...prev]);
   };
 
   const handleDeleteProduct = (id) => {
-    // Hanya dipanggil setelah API delete sukses
     setAllProducts((prev) => prev.filter((p) => p.id !== id));
   };
 

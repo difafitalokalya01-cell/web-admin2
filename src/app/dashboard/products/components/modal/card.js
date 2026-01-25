@@ -6,15 +6,13 @@ import { useState } from "react";
 import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
 
-// Ambil dari env, fallback ke localhost hanya untuk dev
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function ProductCard({ product, onDeleteSuccess }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // ✅ Perbaikan: jangan tambahkan /uploads lagi jika sudah ada di imageUrl
   const imageUrl = product?.imageUrl
-    ? `${BASE_URL}${product.imageUrl}` // langsung gunakan path lengkap dari backend
+    ? `${BASE_URL}${product.imageUrl}`
     : null;
 
   const handleDelete = () => {
@@ -29,10 +27,8 @@ export default function ProductCard({ product, onDeleteSuccess }) {
     const toastId = toast.loading("Menghapus...");
 
     try {
-      // ✅ Hapus dari server dulu
       await axios.delete(`/api/products/${product.id}`);
 
-      // ✅ Baru update UI
       onDeleteSuccess(product.id);
 
       toast.update(toastId, {
@@ -50,7 +46,6 @@ export default function ProductCard({ product, onDeleteSuccess }) {
         isLoading: false,
         autoClose: 2000,
       });
-      // Tidak panggil onDeleteSuccess → UI tetap konsisten
     }
   };
 
