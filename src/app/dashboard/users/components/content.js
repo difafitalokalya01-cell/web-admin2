@@ -45,9 +45,10 @@ export default function ContentUserPage({ dataUsers }) {
     async function handleGetAllUsers() {
 
       try {
-        const res = await axios.get("/api/admin/user-data");
+        const res = await axios.get(`/api/admin/users`);
 
         setUsers(res.data.usersData);
+        console.log(res.data.usersData);
 
       } catch (err) {
         console.error("Get users error:", err);
@@ -59,7 +60,6 @@ export default function ContentUserPage({ dataUsers }) {
     return () => (clearInterval(interval));
 
   }, []);
-
   
   const handleConfirmDeleteById = async () => {
 
