@@ -6,7 +6,7 @@ export default async function UserPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("admin_token")?.value;
 
-  const res = await axios.get(`/api/admin/user-data`, {
+  const res = await axios.get(`/api/admin/users`, {
     headers: {
       Cookie: `admin_token=${token}`,
     },

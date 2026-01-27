@@ -5,8 +5,8 @@ import ModalBoxDataUsers from "./modal/modalComponent";
 import { useEffect, useState } from "react";
 import ConfirmPopup from "@/app/components/modal/modalConfirm";
 import ReactPaginate from "react-paginate";
-import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
+import axios from "@/app/lib/axios";
 
 export default function ContentUserPage({ dataUsers }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -45,9 +45,11 @@ export default function ContentUserPage({ dataUsers }) {
     async function handleGetAllUsers() {
 
       try {
-        const res = await axios.get("/api/admin/user-data");
+        const res = await axios.get(`/api/admin/users`);
 
         setUsers(res.data.usersData);
+
+        console.log(res.data.usersData);
 
       } catch (err) {
         console.error("Get users error:", err);
@@ -132,7 +134,7 @@ export default function ContentUserPage({ dataUsers }) {
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.phone}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.terakhirLogin}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.createdAt}</td>
-                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.accountBank}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.bankAccounts.length || 0}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.password}</td>
                     <td className="px-3 py-2">{user.category}</td>
                     <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">
