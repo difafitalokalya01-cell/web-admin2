@@ -72,7 +72,7 @@ export default function RootDashboard({ children }) {
   };
 
   const navListItems = [
-    { title: "Home", path: "/dashboard", icondefault: Home },
+    { title: "Home", path: "/dashboard/beranda", icondefault: Home },
     { title: "Users", path: "/dashboard/users", icondefault: Users },
     { title: "Info Terbaru", path: "/dashboard/informasi", icondefault: TaskIcon },
     {

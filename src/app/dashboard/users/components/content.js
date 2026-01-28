@@ -69,7 +69,7 @@ export default function ContentUserPage({ dataUsers }) {
     
     try {
 
-      const response = await axios.delete(`api/admin/user-data/${userToDelete.id}`);
+      const response = await axios.delete(`api/admin/users/${userToDelete.id}`);
 
       toast.update(toastId, {
         render: "User berhasil dihapus",
@@ -134,7 +134,7 @@ export default function ContentUserPage({ dataUsers }) {
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.phone}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.terakhirLogin}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.createdAt}</td>
-                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.bankAccounts.length || 0}</td>
+                    {/* <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.bankAccounts.length || 0}</td> */}
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.password}</td>
                     <td className="px-3 py-2">{user.category}</td>
                     <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">

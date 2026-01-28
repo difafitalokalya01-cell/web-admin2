@@ -9,7 +9,7 @@ import axios from '@/app/lib/axios';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import ConfirmPopup from '@/app/components/modal/modalConfirm';
 
-export default function DisplayContent() {
+export default function DisplayContent({ token }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [contacts, setContacts] = useState([]);
@@ -18,11 +18,12 @@ export default function DisplayContent() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
+  
 
   const [formData, setFormData] = useState({
     contact: { platform: '', number: '', link: '' },
-    rekening: { bankName: '', accountNumber: '' },
-    banner: { title: '', image: '' },
+    rekening: { bankName: '', accountNumber: '', accountHolder: '' },
+    banner: { title: '', image: '', imagePreview: '' },
   });
 
   const CONTACT_PLATFORMS = ['WhatsApp', 'Telegram'];
@@ -30,16 +31,24 @@ export default function DisplayContent() {
 
   const fetchAllData = async () => {
     try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      };
+
       const [contactRes, rekeningRes, bannerRes] = await Promise.all([
-        axios.get("/api/contact"),
-        axios.get("/api/rekening"),
-        axios.get("/api/banner"),
+        axios.get("/api/contact", config),
+        axios.get("/api/rekening", config),
+        axios.get("/api/banner", config),
       ]);
+
       setContacts(contactRes.data.data || []);
       setRekenings(rekeningRes.data.data || []);
       setBanners(bannerRes.data.data || []);
     } catch (error) {
-      console.error("Gagal mengambil ", error);
+      console.error("Gagal mengambil data:", error.response?.data || error);
       toast.error("Gagal memuat data");
     }
   };
@@ -64,12 +73,15 @@ export default function DisplayContent() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+
+    const [parent, child] = name.split(".");
+
+    setFormData(prev => ({
       ...prev,
-      [modalType.toLowerCase()]: {
-        ...prev[modalType.toLowerCase()],
-        [name]: value,
-      },
+      [parent]: {
+        ...prev[parent],
+        [child]: value
+      }
     }));
   };
 
@@ -80,7 +92,7 @@ export default function DisplayContent() {
         ...prev,
         banner: {
           ...prev.banner,
-          imageFile: file,
+          image: file,
           imagePreview: URL.createObjectURL(file),
         },
       }));
@@ -96,8 +108,8 @@ export default function DisplayContent() {
         case "Banner": {
           const payload = new FormData();
           payload.append("title", formData.banner.title);
-          if (formData.banner.imageFile) {
-            payload.append("image", formData.banner.imageFile);
+          if (formData.banner.image) {
+            payload.append("image", formData.banner.image);
           }
           await axios.post("/api/banner", payload, {
             headers: { "Content-Type": "multipart/form-data" },
@@ -105,11 +117,21 @@ export default function DisplayContent() {
           break;
         }
         case "Contact": {
-          await axios.post("/api/contact", formData.contact);
+          await axios.post("/api/contact", formData.contact , 
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
           break;
         }
         case "Rekening": {
-          await axios.post("/api/rekening", formData.rekening);
+          await axios.post("/api/rekening", formData.rekening,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
           break;
         }
       }
@@ -224,6 +246,19 @@ export default function DisplayContent() {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500  outline-none transition"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nama Pemilik Rekening
+                </label>
+                <input
+                  type="text"
+                  name="accountHolder"
+                  value={formData.rekening.accountHolder}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg
+                  focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition"
+                />
+              </div>
             </>
           )}
 
@@ -233,7 +268,7 @@ export default function DisplayContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Judul Banner</label>
                 <input
                   type="text"
-                  name="title"
+                  name="banner.title"
                   value={formData.banner.title}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition"
@@ -302,7 +337,7 @@ export default function DisplayContent() {
 
     try {
       if (type === "contact") {
-        await axios.delete(`/api/contact/${id}`);
+        await axios.delete(`/api/contact/${id}`,{});
       } else if (type === "rekening") {
         await axios.delete(`/api/rekening/${id}`);
       } else if (type === "banner") {
@@ -429,6 +464,10 @@ const getBannerImageUrl = (imageUrl) => {
                   <div>
                     <span className="text-xs text-gray-500">Nomor Rekening:</span>
                     <p className="text-sm text-gray-700">{r.accountNumber}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Nama Pemilik Rekening:</span>
+                    <p className="text-sm text-gray-700">{r.accountHolder}</p>
                   </div>
                 </div>
               ))}
