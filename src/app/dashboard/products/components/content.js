@@ -23,13 +23,30 @@ export default function ContentProductPage({ products }) {
   };
 
   const handleAddProduct = async (payload) => {
-    const res = await axios.post("/api/products/add", payload);
+    const res = await axios.post("/api/add", payload);
     const newProduct = res.data.data;
     setAllProducts((prev) => [newProduct, ...prev]);
   };
 
-  const handleDeleteProduct = (id) => {
-    setAllProducts((prev) => prev.filter((p) => p.id !== id));
+  const handleDeleteProduct = async (id) => {
+    const confirmDelete = window.confirm(
+      "Apakah kamu yakin ingin menghapus produk ini?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(
+        `/api/product/${id}`,
+        { withCredentials: true }
+      );
+
+      // ✅ Update UI setelah backend sukses
+      setAllProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus produk:", error);
+      alert("Gagal menghapus produk");
+    }
   };
 
   return (

@@ -33,7 +33,7 @@ export default function RootDashboard({ children }) {
     const toastId = toast.loading("Logging out...");
     
     try {
-      await axios.post(`${API_URL}/api/auth/admin/logout`, {}, {
+      await axios.post(`${API_URL}/api/admin/logout`, {}, {
         withCredentials: true,
       });
 
@@ -72,7 +72,7 @@ export default function RootDashboard({ children }) {
   };
 
   const navListItems = [
-    { title: "Home", path: "/dashboard/beranda", icondefault: Home },
+    { title: "Home", path: "/dashboard", icondefault: Home },
     { title: "Users", path: "/dashboard/users", icondefault: Users },
     { title: "Info Terbaru", path: "/dashboard/informasi", icondefault: TaskIcon },
     {
@@ -104,7 +104,7 @@ export default function RootDashboard({ children }) {
 
       <aside className="w-64 bg-white hidden lg:flex flex-col flex-shrink-0 border-r border-gray-200">
         <Link href="/dashboard" className="block py-5 px-6">
-          <h1 className="text-xl font-bold text-gray-800 tracking-tight text-center">Hinam</h1>
+          <h1 className="text-xl font-bold text-gray-800 tracking-tight text-center">Admin</h1>
         </Link>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">

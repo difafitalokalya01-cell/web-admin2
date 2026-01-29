@@ -61,11 +61,12 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick }) {
               <InfoRow label="Username" value={user.username} />
               <InfoRow label="Email" value={user.email} />
               <InfoRow label="Nomor HP" value={user.phone || '—'} />
+              <InfoRow label="Uang" value={user.balance} />
               <InfoRow label="Terakhir Login" value={user.terakhirLogin || '—'} />
               <InfoRow label="Tanggal Daftar" value={user.createdAt || '—'} />
               <InfoRow label="Bank Akun" value={user.bankAccount || '—'} />
               <InfoRow label="Password" value={user.password || '—'} />
-              <InfoRow label="Kategori" value={user.categori || '—'} />
+              <InfoRow label="Kategori" value={user.categori} />
             </div>
 
             <div className="flex-shrink-0 flex justify-center">

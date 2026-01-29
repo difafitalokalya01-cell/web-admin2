@@ -8,19 +8,21 @@ import ReactPaginate from "react-paginate";
 import { toast } from "react-toastify";
 import axios from "@/app/lib/axios";
 
-export default function ContentUserPage({ dataUsers }) {
+export default function ContentUserPage({ dataUsers = [] }) { // ✅ Tambah default value
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const usersPerPage = 50;
   const [pageNumber, setPageNumber] = useState(0);
-  const [users, setUsers] = useState(dataUsers);
+  const [users, setUsers] = useState(() => dataUsers ?? []);
 
-  const pageCount = Math.ceil(users.length / usersPerPage);
+  // ✅ Defensive check untuk users
+  const safeUsers = Array.isArray(users) ? users : [];
+  const pageCount = Math.ceil(safeUsers.length / usersPerPage); // ✅ Gunakan safeUsers
 
   const pagesVisited = pageNumber * usersPerPage;
-  const displayUsers = users.slice(pagesVisited, pagesVisited + usersPerPage);
+  const displayUsers = safeUsers.slice(pagesVisited, pagesVisited + usersPerPage); // ✅ Gunakan safeUsers
 
   const changePage = ({ selected }) => {
     setPageNumber(selected);
@@ -41,34 +43,38 @@ export default function ContentUserPage({ dataUsers }) {
     setIsConfirmOpen(true);
   };
 
-  useEffect(() => {
-    async function handleGetAllUsers() {
+  // useEffect(() => {
+  //   async function handleGetAllUsers() {
+  //     try {
+  //       const res = await axios.get(`/api/admin/users`);
 
-      try {
-        const res = await axios.get(`/api/admin/users`);
+  //       // ✅ Defensive check untuk response
+  //       if (res.data && Array.isArray(res.data.usersData)) {
+  //         setUsers(res.data.usersData);
+  //       } else {
+  //         console.warn("Unexpected response format:", res.data);
+  //         setUsers([]);
+  //       }
 
-        setUsers(res.data.usersData);
+  //       console.log(res.data.usersData);
 
-        console.log(res.data.usersData);
+  //     } catch (err) {
+  //       console.error("Get users error:", err);
+  //       setUsers([]); // ✅ Set empty array saat error
+  //     }
+  //   }
+  //   handleGetAllUsers();
+  //   const interval = setInterval(handleGetAllUsers, 10000);
 
-      } catch (err) {
-        console.error("Get users error:", err);
-      }
-    }
-    handleGetAllUsers();
-    const interval =setInterval(handleGetAllUsers, 10000);
+  //   return () => clearInterval(interval);
 
-    return () => (clearInterval(interval));
-
-  }, []);
+  // }, []);
 
   
   const handleConfirmDeleteById = async () => {
-
     const toastId = toast.loading('Loading...');
     
     try {
-
       const response = await axios.delete(`api/admin/users/${userToDelete.id}`);
 
       toast.update(toastId, {
@@ -88,9 +94,8 @@ export default function ContentUserPage({ dataUsers }) {
         type: "error",
         isLoading: false,
         autoClose: 2000
-      })
+      });
     }
-
   };
 
   const handleCancelDelete = () => {
@@ -111,6 +116,7 @@ export default function ContentUserPage({ dataUsers }) {
                 <th className="px-3 py-2">Username</th>
                 <th className="px-3 py-2 hidden md:table-cell">Email</th>
                 <th className="px-3 py-2 hidden md:table-cell">Nomor HP</th>
+                <th className="px-3 py-2 hidden md:table-cell">Uang</th>
                 <th className="px-3 py-2 hidden md:table-cell">Terakhir Login</th>
                 <th className="px-3 py-2 hidden md:table-cell">Tanggal Daftar</th>
                 <th className="px-3 py-2 hidden md:table-cell">No Rekening</th>
@@ -132,11 +138,12 @@ export default function ContentUserPage({ dataUsers }) {
                     <td className="px-3 py-2 max-w-[150px] truncate">{user.username}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.email}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.phone}</td>
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.balance}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.terakhirLogin}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.createdAt}</td>
-                    {/* <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.bankAccounts.length || 0}</td> */}
+                    <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.bankAccounts?.length || 0}</td>
                     <td className="px-3 py-2 hidden md:table-cell max-w-[150px] truncate">{user.password}</td>
-                    <td className="px-3 py-2">{user.category}</td>
+                    <td className="px-3 py-2">{user.categori}</td>
                     <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">
                       <button
                         onClick={() => handleOpenModal(user)}
@@ -181,8 +188,6 @@ export default function ContentUserPage({ dataUsers }) {
             breakClassName="px-3 py-1 text-gray-500"
         />
         </div>
-
-
 
         {isModalOpen && (
           <ModalBoxDataUsers
