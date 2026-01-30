@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 
-
 export default function Header() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -38,12 +37,12 @@ export default function Header() {
 
         {/* AVATAR */}
         <div className="relative ml-4" ref={menuRef}>
-          <img
-            src="/profile.jpg"
+          {/* <img
+            src="/app/assets/icons/loginIcons/prodil.png"
             alt="User profile"
             onClick={() => setOpen(!open)}
             className="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-white"
-          />
+          /> */}
 
           {/* slider */}
           {open && (

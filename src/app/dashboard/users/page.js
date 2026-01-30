@@ -16,7 +16,7 @@ export default async function UserPage() {
 
   return (
     <section className="h-full">
-      <ContentUserPage dataUsers={data} />
+      <ContentUserPage initialData={data} />
     </section>
   );
-};
+}

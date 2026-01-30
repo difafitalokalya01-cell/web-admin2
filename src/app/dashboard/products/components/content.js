@@ -23,7 +23,7 @@ export default function ContentProductPage({ products }) {
   };
 
   const handleAddProduct = async (payload) => {
-    const res = await axios.post("/api/add", payload);
+    const res = await axios.post("/api/product/create", payload);
     const newProduct = res.data.data;
     setAllProducts((prev) => [newProduct, ...prev]);
   };
