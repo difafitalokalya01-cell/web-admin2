@@ -69,12 +69,12 @@ export default function ModalAssignTask({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/50 animate-fadeIn flex items-center justify-center p-4 z-50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="assign-task-modal-title"
     >
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-scaleIn">
         {/* Header */}
         <div className="px-6 py-4 flex justify-between items-center bg-blue-500 text-white sticky top-0 z-10">
           <h2 id="assign-task-modal-title" className="text-xl font-bold">Assign Task to User</h2>

@@ -34,7 +34,6 @@ export default function ModalSelectProduct({ onClose, onSelect }) {
             setImageLoadStates(prev => {
                 const newStates = { ...prev };
                 products.forEach(product => {
-                    // Hanya set loading untuk produk yang belum ada
                     if (!newStates[product.id]) {
                         newStates[product.id] = { loading: true, error: false };
                     }

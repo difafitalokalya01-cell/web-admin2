@@ -10,23 +10,19 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
     const [showRejectConfirm, setShowRejectConfirm] = useState(false);
     const [showApproveConfirm, setShowApproveConfirm] = useState(false);
     
-    // ✅ PERBAIKAN 1: Separate loading state untuk setiap image
     const [proofImageLoading, setProofImageLoading] = useState(true);
     const [proofImageError, setProofImageError] = useState(false);
     const [profileImageLoading, setProfileImageLoading] = useState(true);
     const [profileImageError, setProfileImageError] = useState(false);
 
     useEffect(() => {
-        // Reset states when modal opens
         setNote(item?.note || '');
         
-        // ✅ PERBAIKAN 2: Reset image states
         setProofImageError(false);
         setProofImageLoading(true);
         setProfileImageError(false);
         setProfileImageLoading(true);
         
-        // ✅ PERBAIKAN 3: Log data untuk debugging
         if (item) {
             console.log('[ModalTopup] Item data:', item);
             console.log('[ModalTopup] Proof image path:', item.proofImage);
@@ -80,15 +76,9 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
         }
     };
 
-    // ✅ PERBAIKAN 4: Generate URLs dengan logging
     const proofImageUrl = getImageUrl(item.proofImage, 'transferproof');
     const profilePictureUrl = getImageUrl(item.user?.profilePicture, 'users');
-    
-    // Log generated URLs
-    console.log('[ModalTopup] Generated proof image URL:', proofImageUrl);
-    console.log('[ModalTopup] Generated profile URL:', profilePictureUrl);
 
-    // ✅ PERBAIKAN 5: Handler untuk proof image
     const handleProofImageLoad = () => {
         console.log('[ModalTopup] Proof image loaded successfully');
         setProofImageLoading(false);
@@ -102,7 +92,6 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
         setProofImageError(true);
     };
 
-    // ✅ PERBAIKAN 6: Handler untuk profile image
     const handleProfileImageLoad = () => {
         console.log('[ModalTopup] Profile image loaded successfully');
         setProfileImageLoading(false);
@@ -119,15 +108,13 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
     return (
         <>
             <div 
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="topup-modal-title"
                 onClick={(e) => e.target === e.currentTarget && onClose()}
             >
-                {/* ✅ PERBAIKAN UTAMA: Struktur flex untuk fixed header/footer + scrollable content */}
-                <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
-                    {/* Header - Tetap di atas tanpa sticky */}
+                <div className="bg-white animate-scaleIn rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
                     <div className="bg-blue-500 rounded-t-lg border-b border-blue-600 px-6 py-4 flex justify-between items-center shrink-0">
                         <h2 id="topup-modal-title" className="text-xl font-bold text-white">Verifikasi Top-Up</h2>
                         <button
@@ -142,7 +129,6 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
                         </button>
                     </div>
 
-                    {/* ✅ AREA SCROLLABLE: Konten utama dengan scroll internal */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* User Info */}
                         <div className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
@@ -154,7 +140,6 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
                                     {/* Profile Picture */}
                                     <div className="flex-shrink-0 mx-auto md:mx-0">
                                         <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md">
-                                            {/* ✅ PERBAIKAN 7: Loading state untuk profile */}
                                             {profileImageLoading && (
                                                 <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
                                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -489,10 +474,10 @@ export default function ModalTopup({ item, onClose, onApprove, onReject }) {
                 />
             )}
         </>
+
     );
 }
 
-// Helper Components
 const DetailItem = ({ label, value, valueClass = "font-medium text-gray-900" }) => (
     <div>
         <p className="text-xs text-gray-500">{label}</p>
@@ -526,43 +511,44 @@ const ConfirmationModal = ({
     confirmButtonClass,
     disabled = false,
     icon 
-}) => (
-    <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-modal-title"
-        onClick={(e) => e.target === e.currentTarget && onCancel()}
-    >
-        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 m-4 animate-scale-in">
-            {icon}
-            <h3 id="confirm-modal-title" className="text-lg font-bold text-gray-800 mb-3 text-center">
-                {title}
-            </h3>
-            
-            <div className="text-gray-600 mb-6 text-center">
-                {typeof message === 'string' ? <p>{message}</p> : message}
-            </div>
-            
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-                <button
-                    onClick={onCancel}
-                    className="px-4 py-2.5 text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
-                >
-                    {cancelText}
-                </button>
-                <button
-                    onClick={onConfirm}
-                    disabled={disabled}
-                    className={`px-4 py-2.5 text-white font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all w-full sm:w-auto ${
-                        disabled 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : `${confirmButtonClass} hover:shadow-md`
-                    }`}
-                >
-                    {confirmText}
-                </button>
+    }) => (
+        <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-modal-title"
+            onClick={(e) => e.target === e.currentTarget && onCancel()}
+        >
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 m-4 animate-scale-in">
+                {icon}
+                <h3 id="confirm-modal-title" className="text-lg font-bold text-gray-800 mb-3 text-center">
+                    {title}
+                </h3>
+                
+                <div className="text-gray-600 mb-6 text-center">
+                    {typeof message === 'string' ? <p>{message}</p> : message}
+                </div>
+                
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="px-4 py-2.5 text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors w-full sm:w-auto"
+                    >
+                        {cancelText}
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={disabled}
+                        className={`px-4 py-2.5 text-white font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all w-full sm:w-auto ${
+                            disabled 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : `${confirmButtonClass} hover:shadow-md`
+                        }`}
+                    >
+                        {confirmText}
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+
 );
