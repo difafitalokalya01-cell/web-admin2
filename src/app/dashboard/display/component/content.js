@@ -294,7 +294,6 @@ export default function DisplayContent() {
     setDeleteTarget(null);
   };
 
-  // ✅ Perbaikan: hapus juga panggil fetchAllData() setelah delete
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     const { type, id } = deleteTarget;

@@ -9,7 +9,7 @@ export default function ModalEditUserData({ user, onClose }) {
     id: "",
     username: "",
     email: "",
-    phone: "",
+    balance: "",
     categori: "",
     accountBank: ""
   });
@@ -20,7 +20,7 @@ export default function ModalEditUserData({ user, onClose }) {
         id: user.id || "",
         username: user.username || "",
         email: user.email || "",
-        phone: user.phone || "",
+        balance: user.balance || "",
         categori: user.categori || "",
         accountBank: user.accountBank || ""
       });
@@ -127,12 +127,12 @@ export default function ModalEditUserData({ user, onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nomor HP
+              Uang
             </label>
             <input
               type="text"
-              name="phone"
-              value={formData.phone}
+              name="balance"
+              value={formData.balance}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
@@ -142,13 +142,19 @@ export default function ModalEditUserData({ user, onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Categori
             </label>
-            <input
-              type="text"
+
+            <select
               name="categori"
               value={formData.categori}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
+              className="w-full border border-gray-300 rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              <option value="">-- Pilih Kategori --</option>
+              <option value="Clasic">Clasic</option>
+              <option value="Silver">Silver</option>
+              <option value="Gold">Gold</option>
+              <option value="Platinum">Platinum</option>
+            </select>
           </div>
 
           <div>

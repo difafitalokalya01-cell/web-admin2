@@ -19,7 +19,7 @@ export const metadata = {
         alt: "Tiktok Task Dashboard Preview",
       },
     ],
-    locale: "id_ID",
+    locale: "id_ID",  
     type: "website",
   },
 };

@@ -20,7 +20,8 @@
     "react-dom": "19.1.0",
     "react-paginate": "^8.3.0",
     "react-pagination": "^1.0.0",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "swr": "^2.3.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

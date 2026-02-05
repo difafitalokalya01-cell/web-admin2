@@ -25,7 +25,7 @@ export default function Home() {
 
         try{
 
-            const response = await axios.post('/api/auth/admin/login', formData);
+            const response = await axios.post('/api/admin/login', formData);
             
             setFormData((prev) => ({
                 ...prev,

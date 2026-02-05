@@ -33,7 +33,7 @@ export default function RootDashboard({ children }) {
     const toastId = toast.loading("Logging out...");
     
     try {
-      await axios.post(`${API_URL}/api/auth/admin/logout`, {}, {
+      await axios.post(`${API_URL}/api/admin/logout`, {}, {
         withCredentials: true,
       });
 
@@ -104,7 +104,7 @@ export default function RootDashboard({ children }) {
 
       <aside className="w-64 bg-white hidden lg:flex flex-col flex-shrink-0 border-r border-gray-200">
         <Link href="/dashboard" className="block py-5 px-6">
-          <h1 className="text-xl font-bold text-gray-800 tracking-tight text-center">Hinam</h1>
+          <h1 className="text-xl font-bold text-gray-800 tracking-tight text-center">Admin</h1>
         </Link>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -121,7 +121,7 @@ export default function RootDashboard({ children }) {
                     >
                       <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
                         <Image
-                          src={item.icondefault}
+                          src={item.icondefault.src}
                           alt={`${item.title} icon`}
                           width={20}
                           height={20}
@@ -133,7 +133,7 @@ export default function RootDashboard({ children }) {
 
                       <span className="ml-auto">
                         <Image
-                          src={ArrowRight}
+                          src={ArrowRight.src}
                           width={16}
                           height={16}
                           alt=""
@@ -159,7 +159,7 @@ export default function RootDashboard({ children }) {
                                   ${active ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-500"}`}
                               >
                                 <Image
-                                  src={sub.icondefault}
+                                  src={sub.icondefault.src}
                                   alt={`${sub.title} icon`}
                                   width={18}
                                   height={18}
@@ -187,7 +187,7 @@ export default function RootDashboard({ children }) {
                   >
                     <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
                       <Image
-                        src={item.icondefault}
+                        src={item.icondefault.src}
                         alt={`${item.title} icon`}
                         width={20}
                         height={20}

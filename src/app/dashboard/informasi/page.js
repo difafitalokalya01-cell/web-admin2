@@ -1,16 +1,62 @@
 import ContentTaskPage from "./component/content";
+import { getServerAxios } from "@/app/lib/axios.client";
 
-export default function InformationsPages() {
+export default async function InformationsPages() {
+    const defaultData = {
+        tasks: [],
+        topups: [],
+        withdraws: []
+    };
 
-    const data = [
-        {id: 1, userName: 'jhonedoe', email: 'jhondoe@gmail.com', waktuPermintaan: '10.00-12/052025', tugasKe: '10', status: 'belum selesai', informasi: 'Permintaan Tugas'},
-        {id: 2, userName: 'Denis kontol', email: 'denis@gmial.com', waktuPermintaan: '10.00-12/052025', tugasKe: '15', status: 'diproses', informasi: 'Permintaan Withdraw'},
-        {id: 3, userName: 'Bujang', email: 'Bujang@gmail.com', waktuPermintaan: '10.00-12/052025', tugasKe: '20', status: 'berhasil', informasi: 'Permintaan Deposit'}
-    ];
+    try {
+        const axiosWithAuth = await getServerAxios();
 
-    return (
-        <section className="w-full">
-            <ContentTaskPage dataUsersTask={data}/>
-        </section>
-    )
+        const [tasksRes, topupsRes, withdrawsRes] = await Promise.all([
+            axiosWithAuth.get('/api/admin/request/tasks'),
+            axiosWithAuth.get('/api/admin/request/topups'),
+            axiosWithAuth.get('/api/admin/request/withdraws')
+        ]);
+
+        const combinedData = {
+            tasks: tasksRes.data?.data?.requestTasks || [],
+            topups: topupsRes.data?.data?.topups || [],
+            withdraws: withdrawsRes.data?.data?.withdraws || []
+        };
+
+        console.log('✅ Data loaded:', {
+            tasks: combinedData.tasks.length,
+            topups: combinedData.topups.length,
+            withdraws: combinedData.withdraws.length
+        });
+
+        return (
+            <section className="w-full">
+                <ContentTaskPage data={combinedData}/>
+            </section>
+        );
+
+    } catch (error) {
+        console.error('❌ Critical Error:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+        });
+        
+        if (error.response?.status === 401) {
+            return (
+                <section className="w-full p-8">
+                    <div className="text-center text-red-500">
+                        <h2 className="text-2xl font-bold">Session Expired</h2>
+                        <p className="mt-2">Please login again</p>
+                    </div>
+                </section>
+            );
+        }
+        
+        return (
+            <section className="w-full">
+                <ContentTaskPage data={defaultData}/>
+            </section>
+        );
+    }
 }
