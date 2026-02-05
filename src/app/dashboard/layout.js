@@ -121,7 +121,7 @@ export default function RootDashboard({ children }) {
                     >
                       <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
                         <Image
-                          src={item.icondefault}
+                          src={item.icondefault.src}
                           alt={`${item.title} icon`}
                           width={20}
                           height={20}
@@ -133,7 +133,7 @@ export default function RootDashboard({ children }) {
 
                       <span className="ml-auto">
                         <Image
-                          src={ArrowRight}
+                          src={ArrowRight.src}
                           width={16}
                           height={16}
                           alt=""
@@ -159,7 +159,7 @@ export default function RootDashboard({ children }) {
                                   ${active ? "text-blue-600 font-semibold" : "text-gray-600 hover:text-blue-500"}`}
                               >
                                 <Image
-                                  src={sub.icondefault}
+                                  src={sub.icondefault.src}
                                   alt={`${sub.title} icon`}
                                   width={18}
                                   height={18}
@@ -187,7 +187,7 @@ export default function RootDashboard({ children }) {
                   >
                     <div className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10">
                       <Image
-                        src={item.icondefault}
+                        src={item.icondefault.src}
                         alt={`${item.title} icon`}
                         width={20}
                         height={20}

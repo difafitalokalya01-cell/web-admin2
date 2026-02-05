@@ -19,6 +19,8 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 
+import ProfileIcon from "@/assets/icons/loginIcons/user.png";
+
 export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMutate }) {
   if (!user) return null;
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -80,7 +82,7 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 p-6 relative overflow-hidden rounded-t-2xl">
             <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
             <div className="relative flex items-center justify-between">
               <h2 id="modal-title" className="text-2xl font-bold text-white flex items-center gap-2">
@@ -105,11 +107,11 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <img
-                    src={user.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : '/default-avatar.png'}
+                    src={user.profilePicture ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}` : ProfileIcon.src}
                     alt="Profile"
                     className="w-32 h-32 rounded-2xl border-4 border-gray-100 object-cover shadow-lg"
                     onError={(e) => {
-                      e.target.src = '/default-avatar.png';
+                      e.target.src = ProfileIcon.src;
                     }}
                   />
                   <div className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-full text-xs font-semibold shadow-md ${

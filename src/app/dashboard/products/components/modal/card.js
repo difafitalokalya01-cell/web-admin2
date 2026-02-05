@@ -26,30 +26,15 @@ export default function ProductCard({ product, onDeleteSuccess }) {
   };
 
   const handleDeleteById = async () => {
-    const toastId = toast.loading("Menghapus produk...");
-
-    try {
-      await axios.delete(`/api/products/${product.id}`);
-
-      onDeleteSuccess(product.id);
-
-      toast.update(toastId, {
-        render: "Produk berhasil dihapus!",
-        type: "success",
-        isLoading: false,
-        autoClose: 2000,
-      });
-
-      setIsConfirmOpen(false);
-    } catch (err) {
-      toast.update(toastId, {
-        render: err.response?.data?.message || "Gagal menghapus produk",
-        type: "error",
-        isLoading: false,
-        autoClose: 2000,
-      });
-    }
-  };
+      try {
+        // Delegate ke parent
+        await onDeleteSuccess(product.id);
+        setIsConfirmOpen(false);
+      } catch (err) {
+        // Error ditangani di parent
+        setIsConfirmOpen(false);
+      }
+    };
 
   // Render stars for rating
   const renderRating = (rating) => {

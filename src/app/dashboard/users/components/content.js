@@ -285,12 +285,12 @@ export default function ContentUserPage({ initialData = [] }) {
                               src={
                                 user.profilePicture
                                   ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}`
-                                  : ProfileIcon
+                                  : ProfileIcon.src
                               }
                               alt={user.username}
                               className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
                               onError={(e) => {
-                                e.currentTarget.src = ProfileIcon;
+                                e.currentTarget.src = ProfileIcon.src;
                               }}
                             />
                           <div className="min-w-0">

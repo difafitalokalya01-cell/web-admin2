@@ -1,22 +1,35 @@
 import ContentUserPage from "./components/content.js";
-import axios from "@/app/lib/axios.js";
-import { cookies } from "next/headers";
+import { getServerAxios } from "@/app/lib/axios.client.js";
 
 export default async function UserPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("admin_token")?.value;
 
-  const res = await axios.get(`/api/admin/users`, {
-    headers: {
-      Cookie: `admin_token=${token}`,
-    },
-  });
+  try {
 
-  const data = res.data.usersData;
+    const axiosWithAuth = await getServerAxios();
 
-  return (
-    <section className="h-full">
-      <ContentUserPage initialData={data} />
-    </section>
+    const res = await axiosWithAuth.get(`/api/admin/users`);
+
+    const data = res.data?.usersData;
+
+    return (
+      <section className="h-full">
+        <ContentUserPage initialData={data} />
+      </section>
   );
+
+  } catch (error) {
+      console.error('❌ Error fetching ', {
+        message: error.message,
+        status: error.response?.status,
+      });
+
+      return (
+        <section className="h-full">
+          <div className="items-center text-center">
+            <p>data tidak tersedia</p>
+          </div>
+        </section>
+      );
+  }
+
 }

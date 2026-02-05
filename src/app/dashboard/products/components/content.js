@@ -7,12 +7,15 @@ import AddIcon from "@/assets/icons/productIcons/add.png";
 import Image from "next/image";
 import { AddProductModal } from "./modal/tambah.product";
 import axios from "@/app/lib/axios";
+import { toast } from "react-toastify";
 
 export default function ContentProductPage({ products }) {
   const itemsPerPage = 12;
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [allProducts, setAllProducts] = useState(products);
+
+  console.log(products);
 
   const offset = currentPage * itemsPerPage;
   const currentPageData = allProducts.slice(offset, offset + itemsPerPage);
@@ -29,23 +32,28 @@ export default function ContentProductPage({ products }) {
   };
 
   const handleDeleteProduct = async (id) => {
-    const confirmDelete = window.confirm(
-      "Apakah kamu yakin ingin menghapus produk ini?"
-    );
-
-    if (!confirmDelete) return;
+    const toastId = toast.loading("Menghapus produk...");
 
     try {
-      await axios.delete(
-        `/api/product/${id}`,
-        { withCredentials: true }
-      );
-
-      // ✅ Update UI setelah backend sukses
+      await axios.delete(`/api/products/${id}`);
+      
       setAllProducts((prev) => prev.filter((p) => p.id !== id));
+
+      toast.update(toastId, {
+        render: "Produk berhasil dihapus!",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
     } catch (error) {
       console.error("Gagal menghapus produk:", error);
-      alert("Gagal menghapus produk");
+      
+      toast.update(toastId, {
+        render: error.response?.data?.message || "Gagal menghapus produk",
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
     }
   };
 

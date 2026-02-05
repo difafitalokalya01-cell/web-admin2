@@ -1,28 +1,39 @@
 import Header from "@/app/components/layouts/header";
 import ContentProductPage from "./components/content";
-import axios from "@/app/lib/axios";
-import { cookies } from "next/headers";
+import { getServerAxios } from "@/app/lib/axios.client";
 
 export default async function ProductPages() {
-  const cookieStore = await cookies(); 
-  const token = cookieStore.get("admin_token")?.value;
 
-  const res = await axios.get("/api/products", {
-    headers: {
-      Cookie: `admin_token=${token}`,
-    },
-  });
+  try {
 
-  const dataProduct = res.data?.data;
+    const axiosWithAuth = await getServerAxios();
 
-  console.log(dataProduct);
+    const res = await axiosWithAuth.get("/api/products");
 
-  return (
-    <section className="w-full min-h-screen ">
-      <Header />
-      <div className="w-full py-2">
-        <ContentProductPage products={dataProduct} />
-      </div>
-    </section>
-  );
+    const dataProduct = res.data?.data;
+
+    return (
+      <section className="w-full min-h-screen ">
+        <Header />
+        <div className="w-full py-2">
+          <ContentProductPage products={dataProduct} />
+        </div>
+      </section>
+    );
+  } catch(error) {
+
+      console.error('❌ Error fetching ', {
+        message: error.message,
+        status: error.response?.status,
+      });
+
+      return (
+        <section className="w-full min-h-screen ">
+          <Header />
+          <div className="w-full py-2">
+            <p>Data tidak tersedia</p>
+          </div>
+        </section>
+      ) 
+  }
 }

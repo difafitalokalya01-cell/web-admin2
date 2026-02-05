@@ -2,148 +2,587 @@
 
 import Header from "@/app/components/layouts/header";
 import ConfirmPopup from "@/app/components/modal/modalConfirm";
-import ModalBoxTaskComponent from "./modal/card";
-import { useState } from "react";
+import ModalAssignTask from "./modal/Modalassigntask";
+import ModalSelectProduct from "./modal/Modalselectproduct";
+import ModalTopup from "./modal/Modaltopup";
+import ModalWithdraw from "./modal/Modalwithdraw";
+import { useState, useEffect, useRef } from "react";
 import ReactPaginate from "react-paginate";
+import axios from "@/app/lib/axios";
+import Image from "next/image";
+import { toast } from "react-toastify";
 
-export default function ContentTaskPage({dataUsersTask}) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [userToDelete, setUserToDelete] = useState(null);
+export default function ContentTaskPage({ data: initialData }) {
+    const [data, setData] = useState(initialData);
+    const [isModalAssignOpen, setIsModalAssignOpen] = useState(false);
+    const [isModalProductOpen, setIsModalProductOpen] = useState(false);
+    const [isModalTopupOpen, setIsModalTopupOpen] = useState(false);
+    const [isModalWithdrawOpen, setIsModalWithdrawOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [activeTab, setActiveTab] = useState('tasks');
+    const [isLoading, setIsLoading] = useState(false);
+    const [lastUpdate, setLastUpdate] = useState(new Date());
+    
     const usersPerPage = 50;
     const [pageNumber, setPageNumber] = useState(0);
+    const intervalRef = useRef(null);
 
-    const pageCount = Math.ceil(dataUsersTask.length / usersPerPage);
+    // Fungsi untuk fetch data
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const [dataTaskRes, dataTopupRes, dataWithdrawRes] = await Promise.all([
+                axios.get('/api/admin/request/tasks'),
+                axios.get('/api/admin/request/topups'),
+                axios.get('/api/admin/request/withdraws')
+            ]);
 
+            setData({
+                tasks: dataTaskRes.data?.data?.requestTasks || [],
+                topups: dataTopupRes.data?.data?.topups || [],
+                withdraws: dataWithdrawRes.data?.data?.withdraws || []
+            });
+
+            console.log(setData);
+
+            setLastUpdate(new Date());
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            setData({
+                tasks: [],
+                topups: [],
+                withdraws: []
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Setup auto-fetch
+    useEffect(() => {
+        intervalRef.current = setInterval(() => {
+            fetchData();
+        }, 5000);
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [pageNumber, activeTab]);
+
+    // Data yang akan ditampilkan berdasarkan tab aktif
+    const currentData = Array.isArray(data[activeTab]) ? data[activeTab] : [];
+    
+    const pageCount = Math.ceil(currentData.length / usersPerPage);
     const pagesVisited = pageNumber * usersPerPage;
-    const displayUsers = dataUsersTask.slice(pagesVisited, pagesVisited + usersPerPage);
+    const displayItems = currentData.slice(pagesVisited, pagesVisited + usersPerPage);
 
     const changePage = ({ selected }) => {
         setPageNumber(selected);
     };
 
-    const handleOpenModal = (user) => {
-        setSelectedUser(user);
-        setIsModalOpen(true);
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setPageNumber(0);
     };
 
-    const handleCloseModal = () => {
-        setSelectedUser(null);
-        setIsModalOpen(false);
+    // Handler untuk Request Task
+    const handleOpenAssignTask = (item) => {
+        setSelectedItem(item);
+        setSelectedProduct(null); // Reset selected product
+        setIsModalAssignOpen(true);
     };
 
-    const handleDelete = (user) => {
-        setUserToDelete(user);
-        setIsConfirmOpen(true);
+    const handleSelectProduct = () => {
+        setIsModalProductOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (userToDelete) {
-        // 🔥 Lakukan logika hapus di sini (misal: panggil API)
-        console.log("Menghapus pengguna:", userToDelete.id);
-        // Contoh: onDeleteUser(userToDelete.id);
+    const handleProductSelected = (product) => {
+        setSelectedProduct(product);
+        setIsModalProductOpen(false);
+    };
+
+    const handleAssignTask = async () => {
+      const toastId = toast.loading("Mengirim tugas..");
+
+        if (!selectedProduct) {
+            alert('Silakan pilih produk terlebih dahulu');
+            return;
+        };
+
+        const userId = selectedItem.assignedByUserId;
+
+        try {
+            // Endpoint versi saya: POST /api/admin/tasks/assign
+            await axios.post(`/api/user/${userId}/tasks/assign`, {
+                requestTaskId: selectedItem.id,
+                productId: selectedProduct.id
+            });
+
+            toast.update(toastId, {
+              render: "Tugas berhasil terkirim!",
+              type: "success",
+              isLoading: false,
+              autoClose: 2000,
+            });
+
+            setIsModalAssignOpen(false);
+            setSelectedItem(null);
+            setSelectedProduct(null);
+            await fetchData();
+        } catch (error) {
+            console.error('Error assigning task:', error);
+            toast.update(toastId, {
+            render: error.response?.data?.message || "Gagal mengirim tugas",
+            type: "error",
+            isLoading: false,
+            autoClose: 2000,
+          });
         }
-        setIsConfirmOpen(false);
-        setUserToDelete(null);
     };
 
-    const handleCancelDelete = () => {
-        setIsConfirmOpen(false);
-        setUserToDelete(null);
+    // Handler untuk Topup
+    const handleOpenTopup = (item) => {
+        setSelectedItem(item);
+        setIsModalTopupOpen(true);
+    };
+
+    const handleTopupAction = async (action, note = '') => {
+        try {
+            // Endpoint versi saya: PUT /api/admin/topups/:id
+            await axios.put(`/api/admin/topups/${selectedItem.id}`, {
+                status: action === 'approve' ? 'APPROVED' : 'REJECTED',
+                note: note || undefined
+            });
+
+            alert(`Topup berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
+            setIsModalTopupOpen(false);
+            setSelectedItem(null);
+            await fetchData();
+        } catch (error) {
+            console.error('Error processing topup:', error);
+            alert('Gagal memproses topup: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    // Handler untuk Withdraw
+    const handleOpenWithdraw = (item) => {
+        setSelectedItem(item);
+        setIsModalWithdrawOpen(true);
+    };
+
+    const handleWithdrawAction = async (action, note = '') => {
+        try {
+            // Endpoint versi saya: PUT /api/admin/withdraws/:id
+            await axios.put(`/api/admin/withdraws/${selectedItem.id}`, {
+                status: action === 'approve' ? 'APPROVED' : 'REJECTED',
+                note: note || undefined
+            });
+
+            alert(`Penarikan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
+            setIsModalWithdrawOpen(false);
+            setSelectedItem(null);
+            await fetchData();
+        } catch (error) {
+            console.error('Error processing withdraw:', error);
+            alert('Gagal memproses penarikan: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const formatTime = (date) => {
+        return date.toLocaleTimeString('id-ID', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(amount);
+    };
+    
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <Header />
+            
+            <div className="container mx-auto px-4 py-6">
+                {/* Header Section */}
+                <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4">
+                        <h1 className="text-2xl font-bold text-gray-800 mb-3 md:mb-0">
+                            Data Permintaan
+                        </h1>
+                        
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={fetchData}
+                                disabled={isLoading}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-md transition active:scale-95 text-sm"
+                            >
+                                <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                {isLoading ? 'Memuat...' : 'Refresh'}
+                            </button>
+                            
+                            <div className="text-xs text-gray-500">
+                                Update: {formatTime(lastUpdate)}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex">
+                        <TabButton
+                            active={activeTab === 'tasks'}
+                            onClick={() => handleTabChange('tasks')}
+                            label="Tugas"
+                            count={Array.isArray(data.tasks) ? data.tasks.length : 0}
+                        />
+                        <TabButton
+                            active={activeTab === 'topups'}
+                            onClick={() => handleTabChange('topups')}
+                            label="Top Up"
+                            count={Array.isArray(data.topups) ? data.topups.length : 0}
+                        />
+                        <TabButton
+                            active={activeTab === 'withdraws'}
+                            onClick={() => handleTabChange('withdraws')}
+                            label="Penarikan"
+                            count={Array.isArray(data.withdraws) ? data.withdraws.length : 0}
+                        />
+                    </div>
+                </div>
+
+                {/* Table Section */}
+                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                        {/* Table untuk Request Task */}
+                        {activeTab === 'tasks' && (
+                            <table className="min-w-full text-sm text-left">
+                                <thead className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">No</th>
+                                        <th className="px-4 py-3 font-semibold">ID</th>
+                                        <th className="px-4 py-3 font-semibold">Username</th>
+                                        <th className="px-4 py-3 font-semibold">Tugas Ke</th>
+                                        <th className="px-4 py-3 font-semibold">Status</th>
+                                        <th className="px-4 py-3 font-semibold text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {displayItems.map((item, index) => {
+                                        const globalIndex = pagesVisited + index + 1;
+                                        return (
+                                            <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-150">
+                                                <td className="px-4 py-3 text-center font-medium text-gray-700">
+                                                    {globalIndex}
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-600">
+                                                    {item.assignedByUserId.substring(0, 8)}...
+                                                </td>
+                                                <td className="px-4 py-3 font-medium text-gray-800">
+                                                    {item.user?.username || '-'}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                                        Tugas {item.user?.userLevel?.totalTasks || 0}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <StatusBadge status={item.isRead ? 'processed' : 'pending'} />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex justify-center">
+                                                        <button
+                                                            onClick={() => handleOpenAssignTask(item)}
+                                                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
+                                                            title="Kirim Tugas"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+
+                        {/* Table untuk Topup */}
+                        {activeTab === 'topups' && (
+                            <table className="min-w-full text-sm text-left">
+                                <thead className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">No</th>
+                                        <th className="px-4 py-3 font-semibold">ID</th>
+                                        <th className="px-4 py-3 font-semibold">Username</th>
+                                        <th className="px-4 py-3 font-semibold">Status</th>
+                                        <th className="px-4 py-3 font-semibold">Jumlah</th>
+                                        <th className="px-4 py-3 font-semibold">Saldo</th>
+                                        <th className="px-4 py-3 font-semibold text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {displayItems.map((item, index) => {
+                                        const globalIndex = pagesVisited + index + 1;
+                                        return (
+                                            <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-150">
+                                                <td className="px-4 py-3 text-center font-medium text-gray-700">
+                                                    {globalIndex}
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-600">
+                                                    {item.userId.substring(0, 8)}...
+                                                </td>
+                                                <td className="px-4 py-3 font-medium text-gray-800">
+                                                    {item.user?.username || '-'}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <StatusBadge status={item.status} />
+                                                </td>
+                                                <td className="px-4 py-3 font-semibold text-green-600">
+                                                    {formatCurrency(item.amount)}
+                                                </td>
+                                                <td className="px-4 py-3 font-medium">
+                                                    {formatCurrency(item.user?.balance || 0)}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex justify-center">
+                                                        <button
+                                                            onClick={() => handleOpenTopup(item)}
+                                                            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
+                                                            title="Proses Topup"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+
+                        {/* Table untuk Withdraw */}
+                        {activeTab === 'withdraws' && (
+                            <table className="min-w-full text-sm text-left">
+                                <thead className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">No</th>
+                                        <th className="px-4 py-3 font-semibold">ID</th>
+                                        <th className="px-4 py-3 font-semibold">Username</th>
+                                        <th className="px-4 py-3 font-semibold">Status</th>
+                                        <th className="px-4 py-3 font-semibold">Jumlah</th>
+                                        <th className="px-4 py-3 font-semibold">Saldo</th>
+                                        <th className="px-4 py-3 font-semibold text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {displayItems.map((item, index) => {
+                                        const globalIndex = pagesVisited + index + 1;
+                                        return (
+                                            <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-150">
+                                                <td className="px-4 py-3 text-center font-medium text-gray-700">
+                                                    {globalIndex}
+                                                </td>
+                                                <td className="px-4 py-3 text-gray-600">
+                                                    {item.userId.substring(0, 8)}...
+                                                </td>
+                                                <td className="px-4 py-3 font-medium text-gray-800">
+                                                    {item.user?.username || '-'}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <StatusBadge status={item.status} />
+                                                </td>
+                                                <td className="px-4 py-3 font-semibold text-red-600">
+                                                    {formatCurrency(item.amount)}
+                                                </td>
+                                                <td className="px-4 py-3 font-medium">
+                                                    {formatCurrency(item.user?.balance || 0)}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex justify-center">
+                                                        <button
+                                                            onClick={() => handleOpenWithdraw(item)}
+                                                            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
+                                                            title="Proses Penarikan"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+
+                        {displayItems.length === 0 && (
+                            <div className="text-center py-12">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                <p className="mt-2 text-gray-500 font-medium">Tidak ada data</p>
+                                <p className="text-gray-400 text-sm">Belum ada permintaan {activeTab}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Pagination */}
+                    {pageCount > 1 && (
+                        <div className="flex justify-between items-center px-4 py-4 border-t bg-gray-50">
+                            <div className="text-sm text-gray-600">
+                                Menampilkan {pagesVisited + 1} - {Math.min(pagesVisited + usersPerPage, currentData.length)} dari {currentData.length} data
+                            </div>
+                            
+                            <ReactPaginate
+                                previousLabel={"← Prev"}
+                                nextLabel={"Next →"}
+                                pageCount={pageCount}
+                                onPageChange={changePage}
+                                forcePage={pageNumber}
+                                containerClassName="flex items-center gap-1"
+                                pageClassName="hidden sm:block"
+                                pageLinkClassName="px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-100 transition text-sm"
+                                activeLinkClassName="!bg-blue-500 !text-white !border-blue-500 font-semibold"
+                                previousClassName="block"
+                                previousLinkClassName="px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-100 transition text-sm font-medium"
+                                nextClassName="block"
+                                nextLinkClassName="px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-100 transition text-sm font-medium"
+                                disabledLinkClassName="!opacity-50 !cursor-not-allowed !hover:bg-white"
+                                breakLabel="..."
+                                breakClassName="px-2 text-gray-500"
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Modals */}
+            {isModalAssignOpen && (
+                <ModalAssignTask
+                    item={selectedItem}
+                    selectedProduct={selectedProduct}
+                    onClose={() => {
+                        setIsModalAssignOpen(false);
+                        setSelectedItem(null);
+                        setSelectedProduct(null);
+                    }}
+                    onSelectProduct={handleSelectProduct}
+                    onAssignTask={handleAssignTask}
+                />
+            )}
+
+            {isModalProductOpen && (
+                <ModalSelectProduct
+                    onClose={() => setIsModalProductOpen(false)}
+                    onSelect={handleProductSelected}
+                />
+            )}
+
+            {isModalTopupOpen && (
+                <ModalTopup
+                    item={selectedItem}
+                    onClose={() => {
+                        setIsModalTopupOpen(false);
+                        setSelectedItem(null);
+                    }}
+                    onApprove={(note) => handleTopupAction('approve', note)}
+                    onReject={(note) => handleTopupAction('reject', note)}
+                />
+            )}
+
+            {isModalWithdrawOpen && (
+                <ModalWithdraw
+                    item={selectedItem}
+                    onClose={() => {
+                        setIsModalWithdrawOpen(false);
+                        setSelectedItem(null);
+                    }}
+                    onApprove={(note) => handleWithdrawAction('approve', note)}
+                    onReject={(note) => handleWithdrawAction('reject', note)}
+                />
+            )}
+        </div>
+    );
+}
+
+// Component untuk Tab Button
+function TabButton({ active, onClick, label, count }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex-1 md:flex-none px-6 py-3 font-medium transition-colors relative ${
+                active
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+        >
+            <span className="flex items-center justify-center gap-2">
+                {label}
+                <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    active ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'
+                }`}>
+                    {count}
+                </span>
+            </span>
+            {active && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+            )}
+        </button>
+    );
+}
+
+// Component untuk Status Badge
+function StatusBadge({ status }) {
+    const getStatusStyle = () => {
+        const statusLower = status?.toLowerCase() || '';
+        
+        if (statusLower.includes('pending') || statusLower.includes('menunggu')) {
+            return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        }
+        if (statusLower.includes('approved') || statusLower.includes('selesai') || statusLower.includes('sukses') || statusLower.includes('completed')) {
+            return 'bg-green-100 text-green-800 border-green-200';
+        }
+        if (statusLower.includes('rejected') || statusLower.includes('ditolak') || statusLower.includes('gagal')) {
+            return 'bg-red-100 text-red-800 border-red-200';
+        }
+        if (statusLower.includes('processing') || statusLower.includes('proses') || statusLower.includes('processed')) {
+            return 'bg-blue-100 text-blue-800 border-blue-200';
+        }
+        
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     };
 
     return (
-    <div className="min-h-screen">
-      <Header />
-      <div className="py-2">
-        <div className="w-full overflow-x-auto bg-white shadow-md rounded-md overflow-y-auto">
-          <table className="min-w-full text-sm text-left border-collapse">
-            <thead className="sticky top-0 bg-blue-100 text-gray-800 z-10">
-              <tr>
-                <th className="px-3 py-2 w-12">No</th>
-                <th className="px-3 py-2 hidden md:table-cell">ID</th>
-                <th className="px-3 py-2">Username</th>
-                <th className="px-3 py-2 hidden md:table-cell">Email</th>
-                <th className="px-3 py-2 hidden md:table-cell">Waktu Permintaan</th>
-                <th className="px-3 py-2 hidden md:table-cell">Tugas ke</th>
-                <th className="px-3 py-2 hidden md:table-cell">Status</th>
-                <th className="px-3 py-2">Informasi</th>
-                <th className="px-3 py-2 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayUsers.map((user, index) => {
-                const globalIndex = pagesVisited + index + 1;
-                return (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-blue-50 transition-colors duration-150 border-b border-gray-300"
-                  >
-                    <td className="px-3 py-2 text-center">{globalIndex}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.id}</td>
-                    <td className="px-3 py-2">{user.userName}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.email}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.waktuPermintaan}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.tugasKe}</td>
-                    <td className="px-3 py-2 hidden md:table-cell">{user.status}</td>
-                    <td className="px-3 py-2">{user.informasi}</td>
-                    <td className="px-2 py-2 text-center flex flex-col md:flex-row justify-center items-center gap-2">
-                      <button
-                        onClick={() => handleOpenModal(user)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs transition active:scale-95"
-                      >
-                        Detil
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {displayUsers.length === 0 && (
-            <div className="text-center py-4 text-gray-500">Tidak ada data.</div>
-          )}
-        </div>
-
-        <div className="flex justify-center items-center mt-1">
-        <ReactPaginate
-            previousLabel={"<"}
-            nextLabel={">"}
-            pageCount={pageCount}
-            onPageChange={changePage}
-            containerClassName="flex items-center justify-center select-none text-sm"
-            pageClassName="group"
-            pageLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
-            activeLinkClassName="border-blue-400 text-blue-600 font-semibold"
-            previousClassName="group"
-            previousLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
-            nextClassName="group"
-            nextLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
-            disabledClassName="opacity-40 cursor-not-allowed"
-            breakLabel="..."
-            breakClassName="px-3 py-1 text-gray-500"
-        />
-        </div>
-
-        {isModalOpen && (
-          <ModalBoxTaskComponent
-            user={selectedUser}
-            onClose={handleCloseModal}
-            onDeleteClick={handleDelete}
-          />
-        )}
-
-        {isConfirmOpen && (
-          <ConfirmPopup
-            isOpen={isConfirmOpen}
-            message="Apakah Anda yakin akan menghapus akun ini?"
-            onConfirm={handleConfirmDelete}
-            onCancel={handleCancelDelete}
-          />
-        )}
-      </div>
-    </div>
-    )
+        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusStyle()}`}>
+            {status}
+        </span>
+    );
 }
