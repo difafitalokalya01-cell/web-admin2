@@ -28,6 +28,10 @@ export default function ContentTaskPage({ data: initialData }) {
     const [pageNumber, setPageNumber] = useState(0);
     const intervalRef = useRef(null);
 
+    const getCurrentUserLevel = () => {
+        return selectedItem?.user?.userLevel?.currentLevel || 'CLASSIC';
+    };
+
     const fetchData = async () => {
         try {
             setIsLoading(true);
@@ -61,7 +65,7 @@ export default function ContentTaskPage({ data: initialData }) {
     useEffect(() => {
         intervalRef.current = setInterval(() => {
             fetchData();
-        }, 5000);
+        }, 5000);   
 
         return () => {
             if (intervalRef.current) {
@@ -518,6 +522,7 @@ export default function ContentTaskPage({ data: initialData }) {
                 <ModalSelectProduct
                     onClose={() => setIsModalProductOpen(false)}
                     onSelect={handleProductSelected}
+                     userLevel={getCurrentUserLevel()}
                 />
             )}
 

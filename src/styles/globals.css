@@ -1,3 +1,5 @@
+/* postcss */
+
 @import "tailwindcss";
 @tailwind utilities;
 
@@ -48,4 +50,3 @@ body {
   color: #111827;
   font-family: Arial, Helvetica, sans-serif;
 }
-
