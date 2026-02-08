@@ -7,15 +7,13 @@ import { useState } from "react";
 import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 export default function ProductCard({ product, onDeleteSuccess }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const imageUrl = product?.imageUrl
-    ? `${BASE_URL}${product.imageUrl}`
-    : null;
+  // const imageUrl = product?.imageUrl
+  //   ? `${BASE_URL}${product.imageUrl}`
+  //   : null;
 
   const handleDelete = () => {
     setIsConfirmOpen(true);
@@ -66,9 +64,9 @@ export default function ProductCard({ product, onDeleteSuccess }) {
     <div className="group bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full">
       {/* Image Section */}
       <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 h-56 overflow-hidden">
-        {imageUrl && !imageError ? (
+        {product.imageUrl && !imageError ? (
           <img
-            src={imageUrl}
+            src={product.imageUrl}
             alt={product.name || "Product image"}
             className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
             onError={(e) => {

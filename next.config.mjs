@@ -16,9 +16,16 @@ const nextConfig = {
         port: '5000',
         pathname: '/uploads/**',
       },
+      // ✅ Tambahkan Cloudinary
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
     // Atau bisa juga domains (lebih sederhana)
-    domains: ['localhost', '127.0.0.1'],
+    domains: ['localhost', '127.0.0.1', 'res.cloudinary.com'], // ✅ Tambahkan di sini
   },
 };
 
