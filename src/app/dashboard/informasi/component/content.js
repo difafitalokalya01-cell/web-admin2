@@ -121,8 +121,7 @@ export default function ContentTaskPage({ data: initialData }) {
         const userId = selectedItem.assignedByUserId;
 
         try {
-            // Endpoint versi saya: POST /api/admin/tasks/assign
-            await axios.post(`/api/user/${userId}/tasks/assign`, {
+            await axios.post(`/api/admin/${userId}/tasks/assign`, {
                 requestTaskId: selectedItem.id,
                 productId: selectedProduct.id
             });
