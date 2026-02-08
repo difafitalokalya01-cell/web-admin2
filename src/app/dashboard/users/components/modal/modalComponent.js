@@ -22,8 +22,8 @@ import {
 import ProfileIcon from "@/assets/icons/loginIcons/user.png";
 
 export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMutate }) {
-  if (!user) return null;
   const [isOpenModal, setIsOpenModal] = useState(false);
+  if (!user) return null;
 
   const handleEdit = () => setIsOpenModal(true);
 
