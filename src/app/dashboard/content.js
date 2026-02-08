@@ -9,12 +9,17 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
 import axios from '@/app/lib/axios';
 
 export default function Beranda() {
-  const [loading, setLoading] = useState(true);
+  // Hanya untuk initial load pertama kali
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  // Untuk indikator refresh di tombol (opsional)
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   const [dashboardData, setDashboardData] = useState({
     totalUsers: 0,
     totalTasks: 0,
@@ -28,11 +33,12 @@ export default function Beranda() {
   });
 
   // Fetch data dari API
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (!isInitial) {
+        setIsRefreshing(true); // Hanya untuk indikator tombol
+      }
       
-      // Fetch all data in parallel
       const [usersRes, tasksRes, topupsRes, withdrawsRes] = await Promise.all([
         axios.get('/api/admin/users'),
         axios.get('/api/admin/request/tasks'),
@@ -106,141 +112,29 @@ export default function Beranda() {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setIsInitialLoading(false); // Hanya sembunyikan loading initial
+      }
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    // Initial load
+    fetchDashboardData(true);
 
-    // Auto refresh setiap 30 detik
-    const interval = setInterval(fetchDashboardData, 30000);
+    // Auto refresh setiap 3 detik (tanpa loading penuh)
+    const interval = setInterval(() => {
+      fetchDashboardData(); // Tanpa flag initial → tidak trigger loading penuh
+    }, 3000); // 3000ms = 3 detik
+
     return () => clearInterval(interval);
   }, []);
 
-  // Data statistik
-  const stats = [
-    {
-      id: 1,
-      title: 'Total Users',
-      value: dashboardData.totalUsers.toLocaleString('id-ID'),
-      icon: Users,
-      color: 'blue',
-    },
-    {
-      id: 2,
-      title: 'Pending Tasks',
-      value: dashboardData.pendingTasks.toLocaleString('id-ID'),
-      icon: Clock,
-      color: 'orange',
-      trend: `${dashboardData.totalTasks} total permintaan`
-    },
-    {
-      id: 3,
-      title: 'Total Revenue',
-      value: `Rp ${(dashboardData.totalRevenue / 1000000).toFixed(1)}`,
-      icon: DollarSign,
-      color: 'green',
-      trend: 'Dari approved topups'
-    },
-    {
-      id: 4,
-      title: 'Pending Requests',
-      value: (dashboardData.pendingTopups + dashboardData.pendingWithdraws).toLocaleString('id-ID'),
-      icon: Activity,
-      color: 'purple',
-      trend: `Topup: ${dashboardData.pendingTopups} | Withdraw: ${dashboardData.pendingWithdraws}`
-    }
-  ];
+  // ... (fungsi helper seperti getColorClasses, getActivityIcon, dll tetap sama) ...
 
-  const getColorClasses = (color) => {
-    const colors = {
-      blue: 'bg-blue-50 text-blue-600',
-      green: 'bg-green-50 text-green-600',
-      purple: 'bg-purple-50 text-purple-600',
-      orange: 'bg-orange-50 text-orange-600'
-    };
-    return colors[color] || colors.blue;
-  };
-
-  const getActivityIcon = (type) => {
-    switch(type) {
-      case 'task':
-        return <ShoppingCart className="w-4 h-4" />;
-      case 'topup':
-        return <TrendingUp className="w-4 h-4" />;
-      case 'withdraw':
-        return <DollarSign className="w-4 h-4" />;
-      default:
-        return <Activity className="w-4 h-4" />;
-    }
-  };
-
-  const getActivityBadge = (type) => {
-    const badges = {
-      task: 'bg-blue-100 text-blue-700',
-      topup: 'bg-green-100 text-green-700',
-      withdraw: 'bg-orange-100 text-orange-700'
-    };
-    return badges[type] || badges.task;
-  };
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      approved: 'bg-green-100 text-green-700',
-      pending: 'bg-yellow-100 text-yellow-700',
-      rejected: 'bg-red-100 text-red-700',
-      processed: 'bg-blue-100 text-blue-700'
-    };
-    return badges[status] || badges.pending;
-  };
-
-  const getStatusText = (status) => {
-    const text = {
-      approved: 'Approved',
-      pending: 'Pending',
-      rejected: 'Rejected',
-      processed: 'Processed'
-    };
-    return text[status] || status;
-  };
-
-  const getStatusIcon = (status) => {
-    if (status === 'approved' || status === 'processed') {
-      return <CheckCircle className="w-4 h-4" />;
-    }
-    if (status === 'rejected') {
-      return <XCircle className="w-4 h-4" />;
-    }
-    return <Clock className="w-4 h-4" />;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diff = now - date;
-      const minutes = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-
-      if (minutes < 1) return 'Baru saja';
-      if (minutes < 60) return `${minutes} menit lalu`;
-      if (hours < 24) return `${hours} jam lalu`;
-      if (days < 7) return `${days} hari lalu`;
-      
-      return date.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-    } catch {
-      return '-';
-    }
-  };
-
-  if (loading) {
+  // HANYA tampilkan loading saat initial load pertama kali
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -251,6 +145,7 @@ export default function Beranda() {
     );
   }
 
+  // ... (return JSX sama seperti sebelumnya) ...
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -279,15 +174,55 @@ export default function Beranda() {
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat) => {
+          {[
+            {
+              id: 1,
+              title: 'Total Users',
+              value: dashboardData.totalUsers.toLocaleString('id-ID'),
+              icon: Users,
+              color: 'blue',
+            },
+            {
+              id: 2,
+              title: 'Pending Tasks',
+              value: dashboardData.pendingTasks.toLocaleString('id-ID'),
+              icon: Clock,
+              color: 'orange',
+              trend: `${dashboardData.totalTasks} total permintaan`
+            },
+            {
+              id: 3,
+              title: 'Total Revenue',
+              value: `Rp ${(dashboardData.totalRevenue / 1000000).toFixed(1)}`,
+              icon: DollarSign,
+              color: 'green',
+              trend: 'Dari approved topups'
+            },
+            {
+              id: 4,
+              title: 'Pending Requests',
+              value: (dashboardData.pendingTopups + dashboardData.pendingWithdraws).toLocaleString('id-ID'),
+              icon: Activity,
+              color: 'purple',
+              trend: `Topup: ${dashboardData.pendingTopups} | Withdraw: ${dashboardData.pendingWithdraws}`
+            }
+          ].map((stat) => {
             const Icon = stat.icon;
+            const colors = {
+              blue: 'bg-blue-50 text-blue-600',
+              green: 'bg-green-50 text-green-600',
+              purple: 'bg-purple-50 text-purple-600',
+              orange: 'bg-orange-50 text-orange-600'
+            };
+            const colorClass = colors[stat.color] || colors.blue;
+            
             return (
               <div 
                 key={stat.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 ${getColorClasses(stat.color)} rounded-lg flex items-center justify-center`}>
+                  <div className={`w-12 h-12 ${colorClass} rounded-lg flex items-center justify-center`}>
                     <Icon className="w-6 h-6" />
                   </div>
                 </div>
@@ -306,11 +241,25 @@ export default function Beranda() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-900">Recent Activities</h2>
                 <button 
-                  onClick={fetchDashboardData}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
+                  onClick={() => fetchDashboardData()}
+                  disabled={isRefreshing}
+                  className={`text-sm font-medium flex items-center gap-2 transition-colors ${
+                    isRefreshing 
+                      ? 'text-blue-400 cursor-wait' 
+                      : 'text-blue-600 hover:text-blue-700'
+                  }`}
                 >
-                  <Activity className="w-4 h-4" />
-                  Refresh
+                  {isRefreshing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      Refresh
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -336,31 +285,106 @@ export default function Beranda() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {dashboardData.recentActivities.map((activity) => (
-                    <tr key={`${activity.type}-${activity.id}`} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold ${getActivityBadge(activity.type)}`}>
-                          {getActivityIcon(activity.type)}
-                          {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-semibold text-gray-900">{activity.username}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{activity.description}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadge(activity.status)}`}>
-                          {getStatusIcon(activity.status)}
-                          {getStatusText(activity.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-500">{formatDate(activity.createdAt)}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {dashboardData.recentActivities.map((activity) => {
+                    const getActivityIcon = (type) => {
+                      switch(type) {
+                        case 'task': return <ShoppingCart className="w-4 h-4" />;
+                        case 'topup': return <TrendingUp className="w-4 h-4" />;
+                        case 'withdraw': return <DollarSign className="w-4 h-4" />;
+                        default: return <Activity className="w-4 h-4" />;
+                      }
+                    };
+                    
+                    const getActivityBadge = (type) => {
+                      const badges = {
+                        task: 'bg-blue-100 text-blue-700',
+                        topup: 'bg-green-100 text-green-700',
+                        withdraw: 'bg-orange-100 text-orange-700'
+                      };
+                      return badges[type] || badges.task;
+                    };
+                    
+                    const getStatusBadge = (status) => {
+                      const badges = {
+                        approved: 'bg-green-100 text-green-700',
+                        pending: 'bg-yellow-100 text-yellow-700',
+                        rejected: 'bg-red-100 text-red-700',
+                        processed: 'bg-blue-100 text-blue-700'
+                      };
+                      return badges[status] || badges.pending;
+                    };
+                    
+                    const getStatusText = (status) => {
+                      const text = {
+                        approved: 'Approved',
+                        pending: 'Pending',
+                        rejected: 'Rejected',
+                        processed: 'Processed'
+                      };
+                      return text[status] || status;
+                    };
+                    
+                    const getStatusIcon = (status) => {
+                      if (status === 'approved' || status === 'processed') {
+                        return <CheckCircle className="w-4 h-4" />;
+                      }
+                      if (status === 'rejected') {
+                        return <XCircle className="w-4 h-4" />;
+                      }
+                      return <Clock className="w-4 h-4" />;
+                    };
+                    
+                    const formatDate = (dateString) => {
+                      if (!dateString) return '-';
+                      try {
+                        const date = new Date(dateString);
+                        const now = new Date();
+                        const diff = now - date;
+                        const minutes = Math.floor(diff / 60000);
+                        const hours = Math.floor(diff / 3600000);
+                        const days = Math.floor(diff / 86400000);
+
+                        if (minutes < 1) return 'Baru saja';
+                        if (minutes < 60) return `${minutes} menit lalu`;
+                        if (hours < 24) return `${hours} jam lalu`;
+                        if (days < 7) return `${days} hari lalu`;
+                        
+                        return date.toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        });
+                      } catch {
+                        return '-';
+                      }
+                    };
+                    
+                    return (
+                      <tr key={`${activity.type}-${activity.id}`} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold ${getActivityBadge(activity.type)}`}>
+                            {getActivityIcon(activity.type)}
+                            {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-semibold text-gray-900">{activity.username}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-600">{activity.description}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadge(activity.status)}`}>
+                            {getStatusIcon(activity.status)}
+                            {getStatusText(activity.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm text-gray-500">{formatDate(activity.createdAt)}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 

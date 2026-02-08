@@ -5,7 +5,11 @@ import Image from "next/image";
 import axios from "@/app/lib/axios";
 import { getImageUrl } from "@/app/lib/image.helper";
 
-export default function ModalSelectProduct({ onClose, onSelect }) {
+export default function ModalSelectProduct({ 
+  onClose, 
+  onSelect,
+  userLevel = 'CLASSIC' 
+}) {
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +38,6 @@ export default function ModalSelectProduct({ onClose, onSelect }) {
             setImageLoadStates(prev => {
                 const newStates = { ...prev };
                 products.forEach(product => {
-                    // Hanya set loading untuk produk yang belum ada
                     if (!newStates[product.id]) {
                         newStates[product.id] = { loading: true, error: false };
                     }
@@ -50,6 +53,31 @@ export default function ModalSelectProduct({ onClose, onSelect }) {
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(amount);
+    };
+
+    // ✅ Perbaikan: Gunakan parameter price & props userLevel yang benar
+    const calculateCommission = (price) => {
+        const levelMap = {
+            CLASSIC: 15,
+            SILVER: 20,
+            GOLD: 25,
+            PLATINUM: 30
+        };
+
+        // userLevel adalah string seperti "CLASSIC", bukan object
+        const commissionPercentage = levelMap[userLevel.toUpperCase()] || 15;
+        return Math.floor((price * commissionPercentage) / 100);
+    };
+
+    // ✅ Perbaikan: Gunakan props userLevel yang benar
+    const getCommissionPercentage = () => {
+        const levelMap = {
+            CLASSIC: 15,
+            SILVER: 20,
+            GOLD: 25,
+            PLATINUM: 30
+        };
+        return levelMap[userLevel.toUpperCase()] || 15;
     };
 
     const filteredProducts = products.filter(product => 
@@ -147,6 +175,10 @@ export default function ModalSelectProduct({ onClose, onSelect }) {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredProducts.map((product) => {
+                                // ✅ Hitung komisi untuk setiap produk
+                                const commission = calculateCommission(product.price);
+                                const commissionPercentage = getCommissionPercentage();
+    
                                 const imageState = imageLoadStates[product.id] || { loading: false, error: false };
                                 
                                 return (
@@ -210,7 +242,12 @@ export default function ModalSelectProduct({ onClose, onSelect }) {
                                                     {/* Commission */}
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-gray-500 text-xs">Komisi:</span>
-                                                        <span className="font-semibold text-green-600">{formatCurrency(product.commission)}</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-semibold text-green-600">{formatCurrency(commission)}</span>
+                                                            <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded">
+                                                                {commissionPercentage}%
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                     
                                                     {/* Shop Info */}

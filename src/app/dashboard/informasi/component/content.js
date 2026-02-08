@@ -28,7 +28,10 @@ export default function ContentTaskPage({ data: initialData }) {
     const [pageNumber, setPageNumber] = useState(0);
     const intervalRef = useRef(null);
 
-    // Fungsi untuk fetch data
+    const getCurrentUserLevel = () => {
+        return selectedItem?.user?.userLevel?.currentLevel || 'CLASSIC';
+    };
+
     const fetchData = async () => {
         try {
             setIsLoading(true);
@@ -59,11 +62,10 @@ export default function ContentTaskPage({ data: initialData }) {
         }
     };
 
-    // Setup auto-fetch
     useEffect(() => {
         intervalRef.current = setInterval(() => {
             fetchData();
-        }, 5000);
+        }, 5000);   
 
         return () => {
             if (intervalRef.current) {
@@ -82,7 +84,6 @@ export default function ContentTaskPage({ data: initialData }) {
         };
     }, [pageNumber, activeTab]);
 
-    // Data yang akan ditampilkan berdasarkan tab aktif
     const currentData = Array.isArray(data[activeTab]) ? data[activeTab] : [];
     
     const pageCount = Math.ceil(currentData.length / usersPerPage);
@@ -98,7 +99,6 @@ export default function ContentTaskPage({ data: initialData }) {
         setPageNumber(0);
     };
 
-    // Handler untuk Request Task
     const handleOpenAssignTask = (item) => {
         setSelectedItem(item);
         setSelectedProduct(null); // Reset selected product
@@ -153,51 +153,71 @@ export default function ContentTaskPage({ data: initialData }) {
         }
     };
 
-    // Handler untuk Topup
     const handleOpenTopup = (item) => {
         setSelectedItem(item);
         setIsModalTopupOpen(true);
     };
 
     const handleTopupAction = async (action, note = '') => {
+        const toastId = toast.loading(`Memproses penarikan...`);
         try {
-            // Endpoint versi saya: PUT /api/admin/topups/:id
-            await axios.put(`/api/admin/topups/${selectedItem.id}`, {
+            await axios.patch(`/api/admin/topup/${selectedItem.id}/status`, {
                 status: action === 'approve' ? 'APPROVED' : 'REJECTED',
-                note: note || undefined
+                adminNote: note || undefined
             });
 
-            alert(`Topup berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
+            toast.update(toastId, {
+                render: `Penarikan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`,
+                type: "success",
+                isLoading: false,
+                autoClose: 2000,
+            });
+
             setIsModalTopupOpen(false);
             setSelectedItem(null);
             await fetchData();
         } catch (error) {
-            console.error('Error processing topup:', error);
-            alert('Gagal memproses topup: ' + (error.response?.data?.message || error.message));
+            console.error('Error processing toptup:', error);
+            toast.update(toastId, {
+                render: error.response?.data?.message || "Gagal memproses topup",
+                type: "error",
+                isLoading: false,
+                autoClose: 2000,
+            });
         }
     };
 
-    // Handler untuk Withdraw
     const handleOpenWithdraw = (item) => {
         setSelectedItem(item);
         setIsModalWithdrawOpen(true);
     };
 
     const handleWithdrawAction = async (action, note = '') => {
+        const toastId = toast.loading(`Memproses penarikan...`);
         try {
-            // Endpoint versi saya: PUT /api/admin/withdraws/:id
-            await axios.put(`/api/admin/withdraws/${selectedItem.id}`, {
+            await axios.patch(`/api/admin/withdraws/${selectedItem.id}/status`, {
                 status: action === 'approve' ? 'APPROVED' : 'REJECTED',
-                note: note || undefined
+                adminNote: note || undefined
             });
 
-            alert(`Penarikan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`);
+            toast.update(toastId, {
+                render: `Penarikan berhasil ${action === 'approve' ? 'disetujui' : 'ditolak'}!`,
+                type: "success",
+                isLoading: false,
+                autoClose: 2000,
+            });
+
             setIsModalWithdrawOpen(false);
             setSelectedItem(null);
             await fetchData();
         } catch (error) {
             console.error('Error processing withdraw:', error);
-            alert('Gagal memproses penarikan: ' + (error.response?.data?.message || error.message));
+            toast.update(toastId, {
+                render: error.response?.data?.message || "Gagal memproses penarikan",
+                type: "error",
+                isLoading: false,
+                autoClose: 2000,
+            });
         }
     };
 
@@ -503,6 +523,7 @@ export default function ContentTaskPage({ data: initialData }) {
                 <ModalSelectProduct
                     onClose={() => setIsModalProductOpen(false)}
                     onSelect={handleProductSelected}
+                     userLevel={getCurrentUserLevel()}
                 />
             )}
 

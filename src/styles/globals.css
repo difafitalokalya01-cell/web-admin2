@@ -3,6 +3,26 @@
 @import "tailwindcss";
 @tailwind utilities;
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -13,6 +33,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  --animate-fadeIn: fadeIn 0.3s ease-out;
+  --animate-scaleIn: scaleIn 0.25s ease-out;
 }
 
 @media (prefers-color-scheme: dark) {

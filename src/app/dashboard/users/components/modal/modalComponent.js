@@ -71,14 +71,14 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn overflow-y-auto"
+        className="fixed inset-0 bg-black/60 animate-fadeIn flex items-center justify-center z-50 p-4 overflow-y-auto"
         onClick={onClose}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl relative my-8 animate-slideUp"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl relative my-8 animate-scaleIn"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -335,19 +335,6 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
           onMutate={onMutate}
         />
       )}
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
-        .animate-slideUp { animation: slideUp 0.3s ease-out; }
-      `}</style>
     </>
   );
 }
