@@ -1,5 +1,5 @@
-// app/lib/image.helper.js
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'web-server-production-a47f.up.railway.app';
+// app/lib/image.helper.jsweb-
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://web-server-production-a47f.up.railway.app';
 
 /**
  * Build full image URL from path
