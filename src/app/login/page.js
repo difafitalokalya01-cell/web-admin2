@@ -3,7 +3,7 @@
 import adminIcon from "@/assets/icons/loginIcons/human-white.png";
 import ConfirmPopup from "../components/modal/modalConfirm";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import axios from "../lib/axios";
