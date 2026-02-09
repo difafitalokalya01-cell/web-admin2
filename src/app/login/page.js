@@ -40,12 +40,12 @@ export default function Home() {
               render: "Login berhasil",
               type: "success",
               isLoading: false,
-              autoClose: 1000
+              autoClose: "2000"
             });
 
             setTimeout(() => {
-              window.location.href = "/dashboard";
-            }, 1000);
+              router.push("/dashboard");
+            }, 2000);
 
 
         } catch (err) {
