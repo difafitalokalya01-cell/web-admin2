@@ -19,37 +19,46 @@ export default function Home() {
         }));
     };
 
-    const handleSubmit = async (e) => {
-    e.preventDefault()
+const handleSubmit = async (e) => {
+    e.preventDefault();
     let toastId = toast.loading("Loading...");
 
-    try{
+    try {
         const response = await axios.post('/api/admin/login', formData);
         
         const { token, data } = response.data;
     
-        // Simpan ke localStorage (bukan cookie)
+        // Simpan ke localStorage
         localStorage.setItem('admin_token', token);
         localStorage.setItem('adminId', data.id);
         localStorage.setItem('adminName', data.name);
 
-        setFormData((prev) => ({
-            ...prev,
-            email: "",
-            password: "",
-        }));
+        // Clear form
+        setFormData({ email: "", password: "" });
 
         toast.update(toastId, {
           render: "Login berhasil",
           type: "success",
           isLoading: false,
-          autoClose: "2000"
+          autoClose: 1500
         });
 
-        router.push("/dashboard");
+        // ⚠️ TAMBAHKAN DELAY KECIL sebelum redirect
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 300); // Beri waktu localStorage tersimpan
 
-    }  catch (err) {
-      // ... error handling tetap sama
+    } catch (err) {
+        console.error("Login error:", err);
+        
+        const errorMessage = err.response?.data?.message || "Login gagal, coba lagi";
+        
+        toast.update(toastId, {
+          render: errorMessage,
+          type: "error",
+          isLoading: false,
+          autoClose: 2000
+        });
     }
 }
 
