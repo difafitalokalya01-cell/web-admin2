@@ -2,7 +2,10 @@ import Header from "@/app/components/layouts/header";
 import ContentDisplayPage from "./component/content";
 import { cookies } from "next/headers";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ContactPages() {
+  
   const cookieStore = await cookies();
   const token = cookieStore.get("admin_token")?.value;
 
