@@ -7,6 +7,7 @@ export async function middleware(request) {
   return NextResponse.next();
 }
 
+// buang /
 export const config = {
   matcher: ["/login", "/dashboard/:path*"],
 };
