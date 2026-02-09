@@ -24,32 +24,40 @@ export default function Home() {
     let toastId = toast.loading("Loading...");
 
     try{
-        const response = await axios.post('/api/admin/login', formData);
+        const response = await axios.post('/api/admin/login', formData, {
+            withCredentials: true // Penting untuk kirim/terima cookie
+        });
         
-        const { token, data } = response.data;
+        const { data } = response.data;
     
-        // Simpan ke localStorage (bukan cookie)
-        localStorage.setItem('admin_token', token);
+        // Simpan data admin saja (token sudah di cookie)
         localStorage.setItem('adminId', data.id);
         localStorage.setItem('adminName', data.name);
 
-        setFormData((prev) => ({
-            ...prev,
+        setFormData({
             email: "",
             password: "",
-        }));
+        });
 
         toast.update(toastId, {
           render: "Login berhasil",
           type: "success",
           isLoading: false,
-          autoClose: "2000"
+          autoClose: 2000
         });
 
-        router.push("/dashboard");
+        // Hard redirect setelah delay
+        setTimeout(() => {
+            window.location.href = "/dashboard";
+        }, 2100);
 
     }  catch (err) {
-      // ... error handling tetap sama
+        toast.update(toastId, {
+            render: err.response?.data?.message || "Login gagal",
+            type: "error",
+            isLoading: false,
+            autoClose: 3000
+        });
     }
 }
 
