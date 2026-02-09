@@ -10,67 +10,70 @@ import axios from "../lib/axios";
 
 export default function Home() {
   const router = useRouter()
-    const [ formData, setFormData ] = useState({email:"", password:""});
+  const [ formData, setFormData ] = useState({email:"", password:""});
 
-    const handleChange = (e) => {
-        const {name, value} = e.target;
-        setFormData((prev) => ({
-            ...prev, [name]: value,
-        }));
-    };
+  const handleChange = (e) => {
+      const {name, value} = e.target;
+      setFormData((prev) => ({
+          ...prev, [name]: value,
+      }));
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        let toastId = toast.loading("Loading...");
+  const handleSubmit = async (e) => {
+      e.preventDefault()
+      let toastId = toast.loading("Loading...");
 
-        try{
-            const response = await axios.post('/api/admin/login', formData);
-            const adminData = response.data.admin || response.data.data;
-        
-            localStorage.setItem('adminId', adminData.id);
-            localStorage.setItem('adminName', adminData.name);
+      try{
+          const response = await axios.post('/api/admin/login', formData, {
+              withCredentials: true 
+          });
+          
+          const adminData = response.data.admin || response.data.data;
+      
+          localStorage.setItem('adminId', adminData.id);
+          localStorage.setItem('adminName', adminData.name);
 
-            setFormData((prev) => ({
-                ...prev,
-                email: "",
-                password: "",
-            }));
+          setFormData((prev) => ({
+              ...prev,
+              email: "",
+              password: "",
+          }));
 
-            toast.update(toastId, {
-              render: "Login berhasil",
-              type: "success",
-              isLoading: false,
-              autoClose: "2000"
-            });
+          toast.update(toastId, {
+            render: "Login berhasil",
+            type: "success",
+            isLoading: false,
+            autoClose: "2000"
+          });
 
-            setTimeout(() => {
-              router.push("/dashboard");
-            }, 2000);
+          setTimeout(() => {
+            router.refresh();
+            router.push("/dashboard");
+          }, 2500);
 
+      } catch (err) {
+        console.log(err);
 
-        } catch (err) {
-          console.log(err);
+        let message = "Terjadi kesalahan";
 
-          let message = "Terjadi kesalahan";
+        if (err.response) {
+          const { status, data } = err.response;
 
-          if (err.response) {
-            const { status, data } = err.response;
-
-            if (status === 400 || status === 401) {
-              message = data?.message || "Email atau password salah!";
-            } else if (status >= 500) {
-              message = data?.message || "Terjadi kesalahan server!";
-            }
-
-            toast.update(toastId, {
-              render: message,
-              type: "error",
-              isLoading: false,
-              autoClose: 2000,
-            });
+          if (status === 400 || status === 401) {
+            message = data?.message || "Email atau password salah!";
+          } else if (status >= 500) {
+            message = data?.message || "Terjadi kesalahan server!";
           }
+
+          toast.update(toastId, {
+            render: message,
+            type: "error",
+            isLoading: false,
+            autoClose: 2000,
+          });
         }
-    }
+      }
+  }
 
   return (
     <section className="flex justify-center items-center bg-gradient-to-b from-blue-200 to-blue-100 min-h-screen">
