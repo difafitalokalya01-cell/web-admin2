@@ -24,15 +24,15 @@ export default function Home() {
     let toastId = toast.loading("Loading...");
 
     try{
-        // ⚠️ TAMBAHKAN withCredentials: true
-        const response = await axios.post('/api/admin/login', formData, {
-            withCredentials: true // Kirim & terima cookie
-        });
+        const response = await axios.post('/api/admin/login', formData);
         
-        const adminData = response.data.admin || response.data.data;
+        const { token, data } = response.data;
     
-        localStorage.setItem('adminId', adminData.id);
-        localStorage.setItem('adminName', adminData.name);
+        // Simpan ke localStorage (bukan cookie)
+        localStorage.setItem('admin_token', token);
+        localStorage.setItem('adminId', data.id);
+        localStorage.setItem('adminName', data.name);
+
         setFormData((prev) => ({
             ...prev,
             email: "",
@@ -47,7 +47,8 @@ export default function Home() {
         });
 
         router.push("/dashboard");
-    } catch (err) {
+
+    }  catch (err) {
       // ... error handling tetap sama
     }
 }
