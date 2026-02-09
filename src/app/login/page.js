@@ -18,7 +18,6 @@ export default function Home() {
         ...prev, [name]: value,
     }));
   };
-
   const handleSubmit = async (e) => {
       e.preventDefault();
       let toastId = toast.loading("Loading...");
