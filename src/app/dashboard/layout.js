@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useRouter } from 'next/navigation';
 
 import TaskIcon from "@/assets/icons/navbarIcons/to-do-list.png";
 import TopupIcon from "@/assets/icons/navbarIcons/top-up.png";
@@ -25,7 +26,19 @@ export default function RootDashboard({ children }) {
   const [openHistory, setOpenHistory] = useState(false);
   const [activePath, setActivePath] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    
+    if (!token) {
+      console.log("🚫 No token, redirecting to login");
+      router.push('/login');
+    } else {
+      console.log("✅ Token found, access granted");
+    }
+  }, [router]);
 
   useEffect(() => {
     setActivePath(pathName);

@@ -10,54 +10,62 @@ import axios from "../lib/axios";
 
 export default function Home() {
   const router = useRouter()
-    const [ formData, setFormData ] = useState({email:"", password:""});
+  const [ formData, setFormData ] = useState({email:"", password:""});
 
-    const handleChange = (e) => {
-        const {name, value} = e.target;
+  const handleChange = (e) => {
+      const {name, value} = e.target;
         setFormData((prev) => ({
-            ...prev, [name]: value,
-        }));
-    };
+        ...prev, [name]: value,
+    }));
+  };
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    let toastId = toast.loading("Loading...");
+  const handleSubmit = async (e) => {
+      e.preventDefault();
+      let toastId = toast.loading("Loading...");
 
-    try {
-        const response = await axios.post('/api/admin/login', formData, {
-            withCredentials: true
-        });
-        
-        const { token, data } = response.data;
-    
-        // ✅ Simpan token ke localStorage
-        localStorage.setItem('admin_token', token);
-        localStorage.setItem('adminId', data.id);
-        localStorage.setItem('adminName', data.name);
+      try {
+          const response = await axios.post('/api/admin/login', formData, {
+              withCredentials: true
+          });
+          
+          const { token, data } = response.data;
+      
+          // ✅ Simpan token ke localStorage
+          localStorage.setItem('admin_token', token);
+          localStorage.setItem('adminId', data.id);
+          localStorage.setItem('adminName', data.name);
 
-        setFormData({ email: "", password: "" });
+          setFormData({ email: "", password: "" });
 
-        toast.update(toastId, {
-            render: "Login berhasil",
-            type: "success",
-            isLoading: false,
-            autoClose: 2000
-        });
+          toast.update(toastId, {
+              render: "Login berhasil",
+              type: "success",
+              isLoading: false,
+              autoClose: 2000
+          });
 
-        setTimeout(() => {
-            window.location.href = "/dashboard";
-        }, 2100);
+          setTimeout(() => {
+              window.location.href = "/dashboard";
+          }, 2100);
 
-    } catch (err) {
-        console.error("❌ Login error:", err);
-        toast.update(toastId, {
-            render: err.response?.data?.message || "Login gagal",
-            type: "error",
-            isLoading: false,
-            autoClose: 3000
-        });
+      } catch (err) {
+          console.error("❌ Login error:", err);
+          toast.update(toastId, {
+              render: err.response?.data?.message || "Login gagal",
+              type: "error",
+              isLoading: false,
+              autoClose: 3000
+          });
+      }
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      console.log("✅ Already logged in, redirecting to dashboard");
+      router.push('/dashboard');
     }
-}
+  }, [router]);
 
   return (
     <section className="flex justify-center items-center bg-gradient-to-b from-blue-200 to-blue-100 min-h-screen">

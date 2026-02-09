@@ -3,11 +3,7 @@ import axios from 'axios';
 // Buat instance axios dengan konfigurasi default
 const instance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL, 
-  withCredentials: true, 
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, 
+  withCredentials: true 
 });
 
 instance.interceptors.request.use(
