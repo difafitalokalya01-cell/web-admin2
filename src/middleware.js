@@ -134,6 +134,5 @@ export const config = {
     "/",
     "/login",
     "/dashboard/:path*",
-    // Tambahkan path lain yang perlu di-protect
   ],
 };
