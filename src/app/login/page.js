@@ -20,18 +20,24 @@ export default function Home() {
     };
 
 const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+    
+    console.log("🚀 Form submitted!");
+    console.log("📝 Form data:", formData);
+    
     let toastId = toast.loading("Loading...");
 
-    try{
+    try {
+        console.log("📤 Sending request to /api/admin/login");
+        
         const response = await axios.post('/api/admin/login', formData, {
             withCredentials: true
         });
         
-        const { data } = response.data;
-  
+        console.log("✅ Response received:", response.data);
         
-        // ✅ Simpan data admin saja
+        const { data } = response.data;
+    
         localStorage.setItem('adminId', data.id);
         localStorage.setItem('adminName', data.name);
 
@@ -48,11 +54,14 @@ const handleSubmit = async (e) => {
         });
 
         setTimeout(() => {
+            console.log("🍪 Cookies:", document.cookie);
             window.location.href = "/dashboard";
         }, 2100);
 
-    }  catch (err) {
-        console.log("Login error:", err); 
+    } catch (err) {
+        console.error("❌ Login error:", err);
+        console.error("❌ Error response:", err.response);
+        
         toast.update(toastId, {
             render: err.response?.data?.message || "Login gagal",
             type: "error",
