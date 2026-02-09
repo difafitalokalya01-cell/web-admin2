@@ -11,7 +11,7 @@ export const getServerAxios = async () => {
     }
 
     const instance = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-server-production-a47f.up.railway.app',
         timeout: 10000,
         headers: {
             'Content-Type': 'application/json',

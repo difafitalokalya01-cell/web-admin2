@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Default axios instance untuk Client Component
 const axiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'web-server-production-a47f.up.railway.app',
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-server-production-a47f.up.railway.app',
     timeout: 10000,
     withCredentials: true
 });
