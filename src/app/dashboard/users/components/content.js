@@ -2,7 +2,7 @@
 
 import Header from "@/app/components/layouts/header";
 import ModalBoxDataUsers from "./modal/modalComponent";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import ConfirmPopup from "@/app/components/modal/modalConfirm";
 import ReactPaginate from "react-paginate";
 import { toast } from "react-toastify";
@@ -70,6 +70,25 @@ export default function ContentUserPage({ initialData = [] }) {
       revalidateOnReconnect: shouldFetch,
       keepPreviousData: true,
       onError: (err) => {
+        console.error('❌ SWR Error:', err);
+        
+        // ✅ Handle 401: stop fetch & redirect ke login
+        if (err.response?.status === 401) {
+          console.error('❌ Token expired, redirecting to login');
+          
+          // Stop auto-refresh
+          setShouldFetch(false);
+          
+          // Hapus token
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('adminId');
+          localStorage.removeItem('adminName');
+          
+          // Redirect ke login setelah delay
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1000);
+        }
       },
     }
   );
@@ -129,7 +148,7 @@ export default function ContentUserPage({ initialData = [] }) {
     const toastId = toast.loading('Menghapus user...');
     
     try {
-      await axios.delete(`api/admin/users/${userToDelete.id}`);
+      await axios.delete(`/api/admin/users/${userToDelete.id}`);
 
       toast.update(toastId, {
         render: "User berhasil dihapus",
@@ -143,7 +162,7 @@ export default function ContentUserPage({ initialData = [] }) {
       setUserToDelete(null);
 
     } catch(err) {
-      console.log(err);
+      console.error('❌ Delete error:', err);
       toast.update(toastId, {
         render: err.response?.data?.message || "Gagal hapus user",
         type: "error",
@@ -181,6 +200,9 @@ export default function ContentUserPage({ initialData = [] }) {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             <p className="font-semibold">⚠️ Gagal memuat data</p>
             <p className="text-sm mt-1">{error.message}</p>
+            {error.response?.status === 401 && (
+              <p className="text-sm mt-2">Redirecting to login...</p>
+            )}
           </div>
         </div>
       </div>
@@ -191,14 +213,12 @@ export default function ContentUserPage({ initialData = [] }) {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* ✅ Header Section - Full Width */}
       <div className="px-4 py-6">
         <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-gray-900">Manajemen User</h1>
-                {/* ✅ Status Indicator */}
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${isPageVisible ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
                   <span className="text-xs text-gray-500">
@@ -212,7 +232,6 @@ export default function ContentUserPage({ initialData = [] }) {
               </p>
             </div>
 
-            {/* Search Bar */}
             <div className="flex gap-2 flex-1 lg:max-w-md">
               <div className="relative flex-1">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -237,7 +256,6 @@ export default function ContentUserPage({ initialData = [] }) {
           </div>
         </div>
 
-        {/* ✅ Info Banner - Tampil saat halaman tidak visible */}
         {!isPageVisible && (
           <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4 flex items-center gap-3">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -249,7 +267,6 @@ export default function ContentUserPage({ initialData = [] }) {
           </div>
         )}
 
-        {/* ✅ Table Section - Full Width */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -281,18 +298,18 @@ export default function ContentUserPage({ initialData = [] }) {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                            <img
-                              src={
-                                user.profilePicture
-                                  ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}`
-                                  : ProfileIcon.src
-                              }
-                              alt={user.username}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                              onError={(e) => {
-                                e.currentTarget.src = ProfileIcon.src;
-                              }}
-                            />
+                          <img
+                            src={
+                              user.profilePicture
+                                ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}`
+                                : ProfileIcon.src
+                            }
+                            alt={user.username}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                            onError={(e) => {
+                              e.currentTarget.src = ProfileIcon.src;
+                            }}
+                          />
                           <div className="min-w-0">
                             <p className="font-semibold text-gray-900 truncate">{user.username}</p>
                             <p className="text-xs text-gray-500">
@@ -378,7 +395,6 @@ export default function ContentUserPage({ initialData = [] }) {
             )}
           </div>
 
-          {/* ✅ Pagination */}
           {pageCount > 1 && (
             <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
               <ReactPaginate
@@ -404,7 +420,6 @@ export default function ContentUserPage({ initialData = [] }) {
         </div>
       </div>
 
-      {/* Modals */}
       {isModalOpen && (
         <ModalBoxDataUsers
           user={selectedUser}

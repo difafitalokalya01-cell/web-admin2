@@ -1,21 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
 import Image from "next/image";
 import { AddProductModal } from "./modal/tambah.product";
-import axios from "@/app/lib/axios";
+import axios from "@/app/lib/axios"; // ← Pastikan import dari sini
 import { toast } from "react-toastify";
 
-export default function ContentProductPage({ products }) {
+export default function ContentProductPage() { // ← Hapus props products
   const itemsPerPage = 12;
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [allProducts, setAllProducts] = useState(products);
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true); // ← Tambah loading state
 
-  console.log(products);
+  // ✅ Fetch data di sini
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      console.log('📤 Fetching products...');
+      
+      const response = await axios.get("/api/products");
+      
+      console.log('✅ Products fetched:', response.data);
+      setAllProducts(response.data.data || []);
+      
+    } catch (error) {
+      console.error('❌ Error fetching products:', error);
+      toast.error(error.response?.data?.message || 'Gagal mengambil data products');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const offset = currentPage * itemsPerPage;
   const currentPageData = allProducts.slice(offset, offset + itemsPerPage);
@@ -26,9 +48,15 @@ export default function ContentProductPage({ products }) {
   };
 
   const handleAddProduct = async (payload) => {
-    const res = await axios.post("/api/product/create", payload);
-    const newProduct = res.data.data;
-    setAllProducts((prev) => [newProduct, ...prev]);
+    try {
+      const res = await axios.post("/api/product/create", payload);
+      const newProduct = res.data.data;
+      setAllProducts((prev) => [newProduct, ...prev]);
+      toast.success('Produk berhasil ditambahkan!');
+    } catch (error) {
+      console.error('Error adding product:', error);
+      toast.error(error.response?.data?.message || 'Gagal menambah produk');
+    }
   };
 
   const handleDeleteProduct = async (id) => {
@@ -56,6 +84,15 @@ export default function ContentProductPage({ products }) {
       });
     }
   };
+
+  // ✅ Loading state
+  if (loading) {
+    return (
+      <div className="mb-4 bg-white rounded-md p-3 flex justify-center items-center min-h-[400px]">
+        <div className="text-lg text-gray-500">Loading products...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4 bg-white rounded-md p-3 space-y-4">

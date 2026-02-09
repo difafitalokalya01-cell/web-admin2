@@ -63,19 +63,6 @@ export default function ContentTaskPage({ data: initialData }) {
     };
 
     useEffect(() => {
-        intervalRef.current = setInterval(() => {
-            fetchData();
-        }, 5000);   
-
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);

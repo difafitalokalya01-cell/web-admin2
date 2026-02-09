@@ -3,11 +3,22 @@ import { jwtVerify } from "jose";
 
 async function verifyToken(token) {
   try {
-    if (!token) return null;
+    if (!token) {
+      console.log("❌ No token provided");
+      return null;
+    }
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
+    const secret = process.env.JWT_SECRET_ADMIN;
     
+    if (!secret) {
+      console.error("❌ JWT_SECRET_ADMIN not configured!");
+      return null;
+    }
+    
+    const encodedSecret = new TextEncoder().encode(secret);
+    const { payload } = await jwtVerify(token, encodedSecret);
+    
+    console.log("✅ Token verified:", { id: payload.id, role: payload.role });
     return payload;
   } catch (e) {
     console.error("❌ JWT Verify Error:", e.message);
@@ -17,29 +28,14 @@ async function verifyToken(token) {
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("admin_token")?.value;
   
-  const payload = token ? await verifyToken(token) : null;
-  const isValid = !!payload;
-  const isAdmin = payload?.role === "admin";
-
-  // Redirect logic
-  if (pathname === "/login" && isValid && isAdmin) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  if (pathname.startsWith("/dashboard") && (!isValid || !isAdmin)) {
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.delete("admin_token");
-    return response;
-  }
-
-  if (pathname === "/") {
-    return NextResponse.redirect(
-      new URL(isValid && isAdmin ? "/dashboard" : "/login", request.url)
-    );
-  }
-
+  // ✅ PENTING: Middleware Next.js tidak bisa akses localStorage
+  // Jadi kita skip middleware check dan andalkan client-side protection
+  
+  console.log("🔒 Middleware:", pathname);
+  
+  // Biarkan semua request lewat
+  // Protection dilakukan di client-side (layout/page)
   return NextResponse.next();
 }
 
