@@ -24,9 +24,12 @@ export default function Home() {
         let toastId = toast.loading("Loading...");
 
         try{
-
             const response = await axios.post('/api/admin/login', formData);
-            
+            const adminData = response.data.admin || response.data.data;
+        
+            localStorage.setItem('adminId', adminData.id);
+            localStorage.setItem('adminName', adminData.name);
+
             setFormData((prev) => ({
                 ...prev,
                 email: "",
@@ -40,7 +43,9 @@ export default function Home() {
               autoClose: "2000"
             });
 
-            router.push("/dashboard");
+            setTimeout(() => {
+              router.push("/dashboard");
+            }, 2000);
 
 
         } catch (err) {

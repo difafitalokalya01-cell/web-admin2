@@ -1,6 +1,8 @@
 import ModalTaskContent from "./component.js/content";
 import { getServerAxios } from "@/app/lib/axios.client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function TaskHistoriPage() {
     const defaultData = [];
 

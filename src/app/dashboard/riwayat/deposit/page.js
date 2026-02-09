@@ -1,6 +1,8 @@
 import TopupHistoryContent from "./component/content";
 import { getServerAxios } from "@/app/lib/axios.client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function TopupHistoryPage() {
     const defaultData = [];
 

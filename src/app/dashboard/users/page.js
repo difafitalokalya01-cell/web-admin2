@@ -1,6 +1,8 @@
 import ContentUserPage from "./components/content.js";
 import { getServerAxios } from "@/app/lib/axios.client.js";
 
+export const dynamic = 'force-dynamic';
+
 export default async function UserPage() {
 
   try {

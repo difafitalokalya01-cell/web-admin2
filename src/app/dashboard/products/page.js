@@ -2,6 +2,8 @@ import Header from "@/app/components/layouts/header";
 import ContentProductPage from "./components/content";
 import { getServerAxios } from "@/app/lib/axios.client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProductPages() {
 
   try {
