@@ -18,6 +18,8 @@ import ArrowRight from "@/assets/icons/navbarIcons/right-arrow.png";
 import Histori from "@/assets/icons/navbarIcons/restore.png";
 import Display from "@/assets/icons/navbarIcons/monitor.png";
 
+export const dynamic = 'force-dynamic';
+
 export default function RootDashboard({ children }) {
   const pathName = usePathname();
   const [openHistory, setOpenHistory] = useState(false);
