@@ -21,47 +21,35 @@ export default function Home() {
 
 const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    console.log("🚀 Form submitted!");
-    console.log("📝 Form data:", formData);
-    
     let toastId = toast.loading("Loading...");
 
     try {
-        console.log("📤 Sending request to /api/admin/login");
-        
         const response = await axios.post('/api/admin/login', formData, {
             withCredentials: true
         });
         
-        console.log("✅ Response received:", response.data);
-        
-        const { data } = response.data;
+        const { token, data } = response.data;
     
+        // ✅ Simpan token ke localStorage
+        localStorage.setItem('admin_token', token);
         localStorage.setItem('adminId', data.id);
         localStorage.setItem('adminName', data.name);
 
-        setFormData({
-            email: "",
-            password: "",
-        });
+        setFormData({ email: "", password: "" });
 
         toast.update(toastId, {
-          render: "Login berhasil",
-          type: "success",
-          isLoading: false,
-          autoClose: 2000
+            render: "Login berhasil",
+            type: "success",
+            isLoading: false,
+            autoClose: 2000
         });
 
         setTimeout(() => {
-            console.log("🍪 Cookies:", document.cookie);
             window.location.href = "/dashboard";
         }, 2100);
 
     } catch (err) {
         console.error("❌ Login error:", err);
-        console.error("❌ Error response:", err.response);
-        
         toast.update(toastId, {
             render: err.response?.data?.message || "Login gagal",
             type: "error",
