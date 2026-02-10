@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
 import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
 
-export default function ModalEditUserData({ user, onClose }) {
+export default function ModalEditUserData({ user, onClose, onMutate }) {
   const [formData, setFormData] = useState({
     id: "",
     username: "",
     email: "",
-    balance: "",
-    categori: "",
-    accountBank: ""
+    balance: 0,
   });
+
+  const [originalBalance, setOriginalBalance] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -20,10 +20,9 @@ export default function ModalEditUserData({ user, onClose }) {
         id: user.id || "",
         username: user.username || "",
         email: user.email || "",
-        balance: user.balance || "",
-        categori: user.categori || "",
-        accountBank: user.accountBank || ""
+        balance: user.balance || 0,
       });
+      setOriginalBalance(user.balance || 0);
     }
   }, [user]);
 
@@ -34,45 +33,82 @@ export default function ModalEditUserData({ user, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const toastId = toast.loading("Loading...");
-    try {
-
-        const response = await axios.put(`/api/admin/user-data/update`, formData);
+    const toastId = toast.loading("Menyimpan perubahan...");
     
+    try {
+      // ✅ Validasi balance
+      const numBalance = parseInt(formData.balance);
+      if (isNaN(numBalance) || numBalance < 0) {
         toast.update(toastId, {
-          render: "Edit data berhasil",
-          type: "success",
-          isLoading: false,
-          autoClose: 2000
-        });
-
-        onClose();
-
-    } catch (err) {
-      console.error(err);
-
-      let message = "Terjadi kesalahan";
-
-      if(err.response) {
-
-        const {status, data} = err.response;
-
-        if(status === 401 || status === 403){
-          message = data?.message || 'Anda tidak memiliki akses, silahkan login';
-          toast.error('Anda tidak memiliki akses, silahkan login');
-        } else if(status === 403){
-          message = data?.message || 'User tidak tersedia';
-        }
-
-        toast.update(toastId, {
-          render: "Terjadi kesalahan server",
+          render: "Balance harus berupa angka valid (minimal 0)",
           type: "error",
           isLoading: false,
           autoClose: 2000
-        })
+        });
+        return;
       }
+
+      // ✅ Kirim hanya field yang diperlukan
+      const payload = {
+        id: formData.id,
+        username: formData.username,
+        email: formData.email,
+        balance: numBalance
+      };
+
+      console.log('📤 Sending payload:', payload);
+
+      const response = await axios.put(`/api/admin/user-data/update`, payload);
+  
+      toast.update(toastId, {
+        render: "Data user berhasil diupdate",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000
+      });
+
+      // ✅ Refresh data
+      if (onMutate) {
+        await onMutate();
+      }
+
+      onClose();
+
+    } catch (err) {
+      console.error('❌ Update error:', err);
+      console.error('❌ Error response:', err.response?.data);
+
+      let message = "Terjadi kesalahan";
+
+      if (err.response) {
+        const { status, data } = err.response;
+
+        if (status === 401) {
+          message = 'Anda tidak memiliki akses, silahkan login';
+        } else if (status === 404) {
+          message = 'User tidak ditemukan';
+        } else if (status === 400) {
+          message = data?.message || 'Data tidak valid';
+        } else if (status === 500) {
+          message = data?.message || 'Terjadi kesalahan server';
+          // Show detail error in dev mode
+          if (data?.error) {
+            console.error('Server error detail:', data.error);
+          }
+        }
+      }
+
+      toast.update(toastId, {
+        render: message,
+        type: "error",
+        isLoading: false,
+        autoClose: 3000
+      });
     }
   };
+
+  const balanceChange = parseInt(formData.balance || 0) - originalBalance;
+  const isBalanceChanged = balanceChange !== 0;
 
   return (
     <div
@@ -85,20 +121,24 @@ export default function ModalEditUserData({ user, onClose }) {
         className="bg-white rounded-xl shadow-xl w-full max-w-md relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
-          <h2 id="modal-title" className="text-xl font-bold">
-            Edit Data Pengguna
-          </h2>
+          <h2 className="text-xl font-bold">Edit Data Pengguna</h2>
+          <p className="text-sm text-blue-100 mt-1">
+            {user.username} - {user.email}
+          </p>
         </div>
 
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center active:scale-95 rounded-full bg-white/30 text-white hover:bg-white/50 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/30 text-white hover:bg-white/50 transition"
         >
           <span className="text-xl font-bold">×</span>
         </button>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Username
@@ -108,10 +148,12 @@ export default function ModalEditUserData({ user, onClose }) {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -121,68 +163,99 @@ export default function ModalEditUserData({ user, onClose }) {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
             />
           </div>
 
+          {/* Balance */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Uang
+              Saldo (Rp)
             </label>
             <input
-              type="text"
+              type="number"
               name="balance"
               value={formData.balance}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              min="0"
+              step="1000"
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              required
             />
+            
+            {/* Balance Change Indicator */}
+            {isBalanceChanged && (
+              <div className={`mt-2 p-2 rounded-md text-sm font-medium ${
+                balanceChange > 0 
+                  ? 'bg-green-50 text-green-700' 
+                  : 'bg-red-50 text-red-700'
+              }`}>
+                <span className="text-lg">
+                  {balanceChange > 0 ? '↗' : '↘'}
+                </span>
+                {' '}
+                {balanceChange > 0 ? '+' : ''}
+                Rp {Math.abs(balanceChange).toLocaleString('id-ID')}
+                <div className="text-xs mt-1 opacity-75">
+                  Dari Rp {originalBalance.toLocaleString('id-ID')} → Rp {parseInt(formData.balance).toLocaleString('id-ID')}
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* User Level (Read-only info) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categori
-            </label>
-
-            <select
-              name="categori"
-              value={formData.categori}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="">-- Pilih Kategori --</option>
-              <option value="Clasic">Clasic</option>
-              <option value="Silver">Silver</option>
-              <option value="Gold">Gold</option>
-              <option value="Platinum">Platinum</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              No Rekening
+              Level User
             </label>
             <input
               type="text"
-              name="accountBank"
-              value={formData.accountBank}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              value={user.userLevel?.currentLevel || 'CLASSIC'}
+              disabled
+              className="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-50 text-gray-600 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Level tidak dapat diubah dari sini
+            </p>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          {/* Bank Accounts (Read-only info) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Rekening Bank Terdaftar
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={`${user.bankAccounts?.length || 0} rekening`}
+                disabled
+                className="flex-1 border border-gray-300 rounded-lg p-2.5 bg-gray-50 text-gray-600 cursor-not-allowed"
+              />
+              <button
+                type="button"
+                className="px-3 py-2.5 bg-gray-200 text-gray-600 rounded-lg text-sm cursor-not-allowed"
+                disabled
+              >
+                Detail
+              </button>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition font-semibold"
             >
-              Simpan
+              💾 Simpan Perubahan
             </button>
           </div>
         </form>
