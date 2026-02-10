@@ -43,30 +43,16 @@ export default function ContentProductPage({ products = [] }) {
   };
 
   const handleAddProduct = async (payload) => {
-    const toastId = toast.loading("Menambah produk...");
 
     try {
       const res = await axios.post("/api/product/create", payload);
       const newProduct = res.data.data;
       setAllProducts((prev) => [newProduct, ...prev]);
       
-      toast.update(toastId, {
-        render: "Produk berhasil ditambahkan!",
-        type: "success",
-        isLoading: false,
-        autoClose: 2000,
-      });
-      
       setIsModalOpen(false);
     } catch (error) {
       console.error("Gagal menambah produk:", error);
       
-      toast.update(toastId, {
-        render: error.response?.data?.message || "Gagal menambah produk",
-        type: "error",
-        isLoading: false,
-        autoClose: 2000,
-      });
     }
   };
 
