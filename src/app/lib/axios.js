@@ -1,37 +1,42 @@
+// ✅ BENAR - pointing ke backend
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://web-server-production-a47f.up.railway.app',
+  timeout: 10000,
   withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
-// ✅ Request interceptor untuk auto-handle FormData
+// Request interceptor
 instance.interceptors.request.use(
   (config) => {
-    // Auto-detect FormData dan set header yang benar
-    if (config.data instanceof FormData) {
-      console.log('🔧 Auto-detected FormData, setting multipart/form-data header');
-      // Hapus Content-Type agar browser set sendiri dengan boundary
-      delete config.headers['Content-Type'];
-      // Atau set explicit (axios akan tambahkan boundary otomatis)
-      config.headers['Content-Type'] = 'multipart/form-data';
+    console.log('📤 Request:', config.method.toUpperCase(), config.url);
+    
+    // Ambil token dari localStorage (fallback)
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor untuk error handling
+// Response interceptor
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ Response:', response.status, response.config.url);
+    return response;
+  },
   (error) => {
     console.error('❌ Response Error:', {
       url: error.config?.url,
       status: error.response?.status,
-      message: error.response?.data?.message || error.message
+      message: error.response?.data?.message
     });
     return Promise.reject(error);
   }
