@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Upload, Phone, MessageCircle, Building2, ImageIcon, X, Plus, Trash2, Power, PowerOff } from 'lucide-react';
 import axios from '@/app/lib/axios';
-// import ConfirmPopup from '@/app/component/modal/modalConfirm';
+import ConfirmPopup from '@/app/components/modal/modalConfirm';
 
 // Toast Component
 const Toast = ({ message, type = 'success', onClose }) => {

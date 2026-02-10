@@ -148,7 +148,7 @@ export default function ContentUserPage({ initialData = [] }) {
     const toastId = toast.loading('Menghapus user...');
     
     try {
-      await axios.delete(`/api/admin/users/${userToDelete.id}`);
+      await axios.delete(`/api/admin/user-data/${userToDelete.id}`);
 
       toast.update(toastId, {
         render: "User berhasil dihapus",

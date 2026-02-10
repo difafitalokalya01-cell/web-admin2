@@ -22,36 +22,35 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
         setPageNumber(selected);
     };
 
+    // Update data ketika props berubah
+    useEffect(() => {
+        setDataUsers(initialData);
+        setLastUpdate(new Date());
+    }, [initialData]);
+
+    // HAPUS auto-refresh - tidak ada useEffect dengan interval
+
     const fetchData = async () => {
         try {
             setIsLoading(true);
             
-            // Ambil semua data task dengan status COMPLETED
-            const response = await axios.get('/api/admin/tasks');
+            const response = await axios.get('/api/admin/tasks', {
+                params: { limit: 1000 }
+            });
+            
             const tasks = response.data?.data?.tasks ?? [];
             
-            console.log()
             setDataUsers(tasks);
             setLastUpdate(new Date());
+            toast.success('Data berhasil diperbarui');
             
         } catch (error) {
             console.error('Error fetching history:', error);
-            toast.error('Gagal memuat riwayat tugas');
+            toast.error(error.response?.data?.message || 'Gagal memuat riwayat tugas');
         } finally {
             setIsLoading(false);
         }
     };
-
-    // Auto refresh setiap 10 detik
-    useEffect(() => {
-        // Fetch pertama kali
-        fetchData();
-        const interval = setInterval(() => {
-            fetchData();
-        }, 30000);
-
-        return () => clearInterval(interval);
-    }, []);
 
     const formatTime = (date) => {
         return date.toLocaleTimeString('id-ID', { 
@@ -166,6 +165,7 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
                         </div>
                     </div>
                 </div>
+
                 {/* Table Section */}
                 <div className="bg-white shadow-md rounded-lg overflow-hidden">
                     <div className="overflow-x-auto">
