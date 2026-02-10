@@ -25,17 +25,13 @@ export default function ContentProductPage({ products = [] }) {
   }, []);
 
   const fetchProducts = async () => {
-    setIsLoading(true);
     try {
       const res = await axios.get("/api/products");
       const data = res.data.data || res.data || [];
       setAllProducts(data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
-      toast.error("Gagal memuat produk");
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const offset = currentPage * itemsPerPage;
