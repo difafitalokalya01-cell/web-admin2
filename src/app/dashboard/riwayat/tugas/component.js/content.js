@@ -26,39 +26,26 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
         try {
             setIsLoading(true);
             
+            // Ambil semua data task dengan status COMPLETED
             const response = await axios.get('/api/admin/tasks');
             const tasks = response.data?.data?.tasks ?? [];
             
+            console.log()
             setDataUsers(tasks);
             setLastUpdate(new Date());
             
         } catch (error) {
             console.error('Error fetching history:', error);
-            
-            // ✅ Handle 401: redirect ke login
-            if (error.response?.status === 401) {
-                console.error('❌ Token expired, redirecting to login');
-                
-                localStorage.removeItem('admin_token');
-                localStorage.removeItem('adminId');
-                localStorage.removeItem('adminName');
-                
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 1000);
-                
-                return;
-            }
-            
             toast.error('Gagal memuat riwayat tugas');
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Auto refresh setiap 10 detik
     useEffect(() => {
+        // Fetch pertama kali
         fetchData();
-        
         const interval = setInterval(() => {
             fetchData();
         }, 30000);
@@ -130,31 +117,11 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
                 autoClose: 2000,
             });
 
+            // Refresh data setelah delete
             await fetchData();
             
         } catch (error) {
             console.error('Error deleting task history:', error);
-            
-            // ✅ Handle 401 saat delete
-            if (error.response?.status === 401) {
-                localStorage.removeItem('admin_token');
-                localStorage.removeItem('adminId');
-                localStorage.removeItem('adminName');
-                
-                toast.update(toastId, {
-                    render: 'Session expired, redirecting to login...',
-                    type: 'error',
-                    isLoading: false,
-                    autoClose: 2000,
-                });
-                
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 2000);
-                
-                return;
-            }
-            
             toast.update(toastId, {
                 render: error.response?.data?.message || 'Gagal menghapus riwayat',
                 type: 'error',
@@ -169,6 +136,7 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
             <Header />
             
             <div className="container mx-auto px-4 py-6">
+                {/* Header Section */}
                 <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4">
                         <div>
@@ -198,7 +166,7 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
                         </div>
                     </div>
                 </div>
-
+                {/* Table Section */}
                 <div className="bg-white shadow-md rounded-lg overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm text-left">
@@ -292,6 +260,7 @@ export default function TaskHistory({ dataUsers: initialData = [] }) {
                         )}
                     </div>
 
+                    {/* Pagination */}
                     {pageCount > 1 && (
                         <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-4 border-t bg-gray-50 gap-3">
                             <div className="text-sm text-gray-600">

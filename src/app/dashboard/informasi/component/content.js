@@ -32,35 +32,82 @@ export default function ContentTaskPage({ data: initialData }) {
         return selectedItem?.user?.userLevel?.currentLevel || 'CLASSIC';
     };
 
-    const fetchData = async () => {
-        try {
+    const fetchData = async (showLoading = false) => {
+    try {
+        if (showLoading) {
             setIsLoading(true);
-            const [dataTaskRes, dataTopupRes, dataWithdrawRes] = await Promise.all([
-                axios.get('/api/admin/request/tasks'),
-                axios.get('/api/admin/request/topups'),
-                axios.get('/api/admin/request/withdraws')
-            ]);
+        }
+        
+        const [dataTaskRes, dataTopupRes, dataWithdrawRes] = await Promise.all([
+            axios.get('/api/admin/request/tasks'),
+            axios.get('/api/admin/request/topups'),
+            axios.get('/api/admin/request/withdraws')
+        ]);
 
-            setData({
-                tasks: dataTaskRes.data?.data?.requestTasks || [],
-                topups: dataTopupRes.data?.data?.topups || [],
-                withdraws: dataWithdrawRes.data?.data?.withdraws || []
-            });
+        setData({
+            tasks: dataTaskRes.data?.data?.requestTasks || [],
+            topups: dataTopupRes.data?.data?.topups || [],
+            withdraws: dataWithdrawRes.data?.data?.withdraws || []
+        });
 
-            console.log(setData);
-
-            setLastUpdate(new Date());
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            setData({
-                tasks: [],
-                topups: [],
-                withdraws: []
-            });
-        } finally {
+        setLastUpdate(new Date());
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        
+        // ✅ Handle 401
+        if (error.response?.status === 401) {
+            console.error('❌ Token expired, redirecting to login');
+            
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+            
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('adminId');
+            localStorage.removeItem('adminName');
+            
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
+            
+            return;
+        }
+        
+        setData({
+            tasks: [],
+            topups: [],
+            withdraws: []
+        });
+    } finally {
+        if (showLoading) {
             setIsLoading(false);
         }
+    }
     };
+
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        intervalRef.current = setInterval(() => {
+            console.log("🔄 Silent refresh...");
+            fetchData(); 
+        }, 3000); 
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [activeTab]); 
 
     useEffect(() => {
         return () => {

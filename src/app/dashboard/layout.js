@@ -62,13 +62,12 @@ export default function RootDashboard({ children }) {
   }, [isMobileMenuOpen]);
 
   const handleLogout = async () => {
-    const toastId = toast.loading("Logging out...");
-    
+  const toastId = toast.loading("Logging out...");
+  
     try {
-      await axios.post(`${API_URL}/api/admin/logout`, {}, {
-        withCredentials: true,
-      });
-
+      // Hapus token langsung
+      localStorage.removeItem('admin_token');
+      
       toast.update(toastId, {
         render: "Logout berhasil",
         type: "success",
@@ -80,10 +79,8 @@ export default function RootDashboard({ children }) {
         window.location.href = "/login";
       }, 1000);
     } catch (err) {
-      console.error("Logout API error:", err);
-
       toast.update(toastId, {
-        render: "Logout gagal, coba lagi",
+        render: "Logout gagal",
         type: "error",
         isLoading: false,
         autoClose: 1500,

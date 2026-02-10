@@ -1,41 +1,89 @@
 'use client';
 
-import ModalButton from './modal/modalButtonDisplay';
-import ModalBoxDisplayComponent from './modal/modalBoxComponent';
 import { useEffect, useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Phone, MessageCircle, Building2, ImageIcon, X, Plus, Trash2, Power, PowerOff } from 'lucide-react';
 import axios from '@/app/lib/axios';
-import { TrashIcon } from '@heroicons/react/24/outline';
-import ConfirmPopup from '@/app/components/modal/modalConfirm';
-import { CheckCircleIcon, XCircleIcon, InformationCircleIcon } from '@heroicons/react/24/solid';
+// import ConfirmPopup from '@/app/component/modal/modalConfirm';
 
-export default function DisplayContent() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null);
+// Toast Component
+const Toast = ({ message, type = 'success', onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const styles = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    info: 'bg-blue-500'
+  };
+
+  return (
+    <div className={`fixed top-4 right-4 ${styles[type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in z-50`}>
+      <span>{message}</span>
+      <button onClick={onClose} className="hover:opacity-80">
+        <X size={18} />
+      </button>
+    </div>
+  );
+};
+
+// Modern Modal Component
+const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            {Icon && <Icon className="text-gray-600" size={24} />}
+            <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function ContentDisplay({ token }) {
+  const [modals, setModals] = useState({
+    whatsapp: false,
+    telegram: false,
+    rekening: false,
+    banner: false
+  });
+
   const [contacts, setContacts] = useState([]);
   const [rekenings, setRekenings] = useState([]);
   const [banners, setBanners] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [confirmMessage, setConfirmMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [toggleLoading, setToggleLoading] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const [formData, setFormData] = useState({
-    contact: { platform: '', number: '', link: '' },
+    whatsapp: { number: '', link: '' },
+    telegram: { number: '', link: '' },
     rekening: { bankName: '', accountNumber: '', accountHolder: '' },
     banner: { title: '', imageFile: null, imagePreview: '' },
   });
 
-  const CONTACT_PLATFORMS = ['WhatsApp', 'Telegram'];
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   const fetchAllData = async () => {
     setIsLoading(true);
-    setErrorMessage(null);
     try {
       const [contactRes, rekeningRes, bannerRes] = await Promise.all([
         axios.get("/api/contact"),
@@ -46,21 +94,9 @@ export default function DisplayContent() {
       setContacts(Array.isArray(contactRes.data.data) ? contactRes.data.data : []);
       setRekenings(Array.isArray(rekeningRes.data.data) ? rekeningRes.data.data : []);
       setBanners(Array.isArray(bannerRes.data.data) ? bannerRes.data.data : []);
-
-      console.log('Data loaded:', {
-        contacts: contactRes.data.data?.length || 0,
-        rekenings: rekeningRes.data.data?.length || 0,
-        banners: bannerRes.data.data?.length || 0
-      });
-
     } catch (error) {
       console.error("Error fetching data:", error);
-      const msg = error.response?.data?.message || "Gagal memuat data. Silakan coba lagi.";
-      setErrorMessage(msg);
-      
-      setContacts([]);
-      setRekenings([]);
-      setBanners([]);
+      showToast("Gagal memuat data", "error");
     } finally {
       setIsLoading(false);
     }
@@ -70,70 +106,41 @@ export default function DisplayContent() {
     fetchAllData();
   }, []);
 
-  // Clear messages after 5 seconds
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage]);
-
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  const handleOpenModal = (type) => {
-    setModalType(type);
-    setIsModalOpen(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
+  const openModal = (type) => {
+    setModals(prev => ({ ...prev, [type]: true }));
   };
 
-  const handleCloseModal = () => {
-    setModalType(null);
-    setIsModalOpen(false);
-    
+  const closeModal = (type) => {
+    setModals(prev => ({ ...prev, [type]: false }));
     if (formData.banner.imagePreview) {
       URL.revokeObjectURL(formData.banner.imagePreview);
     }
-
     setFormData({
-      contact: { platform: '', number: '', link: '' },
+      whatsapp: { number: '', link: '' },
+      telegram: { number: '', link: '' },
       rekening: { bankName: '', accountNumber: '', accountHolder: '' },
       banner: { title: '', imageFile: null, imagePreview: '' },
     });
-    setErrorMessage(null);
-    setSuccessMessage(null);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
+  const handleChange = (type, field, value) => {
+    setFormData(prev => ({
       ...prev,
-      [modalType.toLowerCase()]: {
-        ...prev[modalType.toLowerCase()],
-        [name]: value,
-      },
+      [type]: { ...prev[type], [field]: value }
     }));
-    // Clear error when user types
-    setErrorMessage(null);
   };
 
   const handleBannerImage = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setErrorMessage("Ukuran file maksimal 5MB");
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("Ukuran file maksimal 5MB", "error");
         return;
       }
 
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        setErrorMessage("Format file harus JPG, PNG, atau WEBP");
+        showToast("Format file harus JPG, PNG, atau WEBP", "error");
         return;
       }
 
@@ -141,7 +148,7 @@ export default function DisplayContent() {
         URL.revokeObjectURL(formData.banner.imagePreview);
       }
 
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         banner: {
           ...prev.banner,
@@ -149,704 +156,641 @@ export default function DisplayContent() {
           imagePreview: URL.createObjectURL(file),
         },
       }));
-      setErrorMessage(null);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (modalType === 'Contact') {
-      if (!formData.contact.platform || !formData.contact.number) {
-        setErrorMessage("Platform dan nomor wajib diisi");
-        return;
-      }
-    } else if (modalType === 'Rekening') {
-      if (!formData.rekening.bankName || !formData.rekening.accountNumber || !formData.rekening.accountHolder) {
-        setErrorMessage("Semua field wajib diisi");
-        return;
-      }
-    } else if (modalType === 'Banner') {
-      if (!formData.banner.title || !formData.banner.imageFile) {
-        setErrorMessage("Judul dan gambar banner wajib diisi");
-        return;
-      }
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
+  const handleSubmit = async (type) => {
     try {
-      switch (modalType) {
-        case "Banner": {
+      switch (type) {
+        case 'whatsapp': {
+          if (!formData.whatsapp.number) {
+            showToast("Nomor WhatsApp wajib diisi", "error");
+            return;
+          }
+          await axios.post("/api/contact", {
+            platform: 'WhatsApp',
+            number: formData.whatsapp.number,
+            link: formData.whatsapp.link
+          });
+          showToast("Kontak WhatsApp berhasil ditambahkan");
+          break;
+        }
+        case 'telegram': {
+          if (!formData.telegram.number) {
+            showToast("Nomor Telegram wajib diisi", "error");
+            return;
+          }
+          await axios.post("/api/contact", {
+            platform: 'Telegram',
+            number: formData.telegram.number,
+            link: formData.telegram.link
+          });
+          showToast("Kontak Telegram berhasil ditambahkan");
+          break;
+        }
+        case 'rekening': {
+          if (!formData.rekening.bankName || !formData.rekening.accountNumber || !formData.rekening.accountHolder) {
+            showToast("Semua field wajib diisi", "error");
+            return;
+          }
+          await axios.post("/api/rekening", formData.rekening);
+          showToast("Rekening berhasil ditambahkan");
+          break;
+        }
+        case 'banner': {
+          if (!formData.banner.title || !formData.banner.imageFile) {
+            showToast("Judul dan gambar banner wajib diisi", "error");
+            return;
+          }
           const payload = new FormData();
           payload.append("title", formData.banner.title);
           payload.append("image", formData.banner.imageFile);
-          
           await axios.post("/api/banner", payload, {
             headers: { "Content-Type": "multipart/form-data" },
           });
-          break;
-        }
-        case "Contact": {
-          await axios.post("/api/contact", formData.contact);
-          break;
-        }
-        case "Rekening": {
-          await axios.post("/api/rekening", formData.rekening);
+          showToast("Banner berhasil ditambahkan");
           break;
         }
       }
 
       await fetchAllData();
-
-      setSuccessMessage(`Berhasil menambahkan ${modalType.toLowerCase()}`);
-      
-      // Auto close modal after success
-      setTimeout(() => {
-        handleCloseModal();
-      }, 1500);
-
+      closeModal(type);
     } catch (error) {
       console.error("Submit error:", error);
-      const msg = error.response?.data?.message || "Terjadi kesalahan. Silakan coba lagi.";
-      setErrorMessage(msg);
-    } finally {
-      setIsSubmitting(false);
+      showToast(error.response?.data?.message || "Terjadi kesalahan", "error");
     }
   };
 
   const handleToggleActive = async (type, id, currentStatus) => {
-    setToggleLoading(id);
-    setErrorMessage(null);
-    
     try {
       await axios.patch(`/api/${type}/${id}/toggle-active`, {
         isActive: !currentStatus
       });
-
       await fetchAllData();
-      
-      // Show success indicator
-      const successMsg = `Status berhasil diubah menjadi ${!currentStatus ? 'aktif' : 'nonaktif'}`;
-      setSuccessMessage(successMsg);
-
+      showToast(`Status berhasil ${!currentStatus ? 'diaktifkan' : 'dinonaktifkan'}`);
     } catch (error) {
       console.error("Toggle error:", error);
-      const msg = error.response?.data?.message || "Gagal mengubah status";
-      setErrorMessage(msg);
-    } finally {
-      setToggleLoading(null);
+      showToast("Gagal mengubah status", "error");
     }
   };
 
-  const renderModalContent = () => {
-    const titleMap = {
-      Contact: 'Tambah Kontak',
-      Rekening: 'Tambah Rekening',
-      Banner: 'Tambah Banner',
-    };
-
-    const gradientClasses = {
-      Contact: 'bg-gradient-to-r from-blue-600 to-blue-500',
-      Rekening: 'bg-gradient-to-r from-blue-600 to-blue-500',
-      Banner: 'bg-gradient-to-r from-blue-600 to-blue-500',
-    };
-
-    return (
-      <>
-        <div className={`w-full rounded-t-md ${gradientClasses[modalType]} p-5 text-white`}>
-          <h2 className="text-xl font-semibold">{titleMap[modalType]}</h2>
-        </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-              <XCircleIcon className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-medium">{errorMessage}</span>
-            </div>
-          )}
-
-          {/* Success Message */}
-          {successMessage && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
-              <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-medium">{successMessage}</span>
-            </div>
-          )}
-
-          {modalType === 'Contact' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Platform <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="platform"
-                  value={formData.contact.platform}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition appearance-none bg-white"
-                >
-                  <option value="">Pilih platform...</option>
-                  {CONTACT_PLATFORMS.map((platform) => (
-                    <option key={platform} value={platform}>
-                      {platform}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nomor <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="number"
-                  value={formData.contact.number}
-                  onChange={handleChange}
-                  required
-                  placeholder="contoh: 628123456789"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link</label>
-                <input
-                  type="url"
-                  name="link"
-                  value={formData.contact.link}
-                  onChange={handleChange}
-                  placeholder="https://wa.me/628123456789"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition"
-                />
-              </div>
-            </>
-          )}
-
-          {modalType === 'Rekening' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nama Bank <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="bankName"
-                  value={formData.rekening.bankName}
-                  onChange={handleChange}
-                  required
-                  placeholder="contoh: BCA, Mandiri, BRI"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nama Pemilik Rekening <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="accountHolder"
-                  value={formData.rekening.accountHolder}
-                  onChange={handleChange}
-                  required
-                  placeholder="contoh: John Doe"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nomor Rekening <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="accountNumber"
-                  value={formData.rekening.accountNumber}
-                  onChange={handleChange}
-                  required
-                  placeholder="1234567890"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition"
-                />
-              </div>
-            </>
-          )}
-
-          {modalType === "Banner" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Judul Banner <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.banner.title}
-                  onChange={handleChange}
-                  required
-                  placeholder="Masukkan judul banner"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Gambar Banner <span className="text-red-500">*</span>
-                </label>
-                <label
-                  htmlFor="bannerUpload"
-                  className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                >
-                  {formData.banner.imagePreview ? (
-                    <img
-                      src={formData.banner.imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <Upload className="w-8 h-8 text-gray-400" />
-                      <p className="text-sm text-gray-500 mt-2">Klik untuk memilih gambar</p>
-                      <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP (Max 5MB)</p>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    id="bannerUpload"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleBannerImage}
-                  />
-                </label>
-              </div>
-            </>
-          )}
-
-          <ModalButton
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full py-2.5 rounded-lg font-medium transition duration-200 ${
-              isSubmitting 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                Menyimpan...
-              </span>
-            ) : (
-              'Simpan'
-            )}
-          </ModalButton>
-        </form>
-      </>
-    );
-  };
-
-  const openConfirm = (type, id, label) => {
-    setDeleteTarget({ type, id });
-    setConfirmMessage(`Hapus ${label} ini?`);
-    setConfirmOpen(true);
-  };
-
-  const closeConfirm = () => {
-    setConfirmOpen(false);
-    setDeleteTarget(null);
-  };
-
-  const handleConfirmDelete = async () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
     const { type, id } = deleteTarget;
-    setDeleteLoading(true);
 
     try {
       await axios.delete(`/api/${type}/${id}`);
       await fetchAllData();
-
-      setSuccessMessage("Data berhasil dihapus");
-      
-      // Close confirm and clear
-      setTimeout(() => {
-        closeConfirm();
-      }, 1500);
-
-    } catch (err) {
-      console.error("Delete error:", err);
-      const msg = err.response?.data?.message || "Gagal menghapus data. Silakan coba lagi.";
-      setErrorMessage(msg);
-    } finally {
-      setDeleteLoading(false);
+      showToast("Data berhasil dihapus");
+      setConfirmOpen(false);
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Delete error:", error);
+      showToast("Gagal menghapus data", "error");
     }
   };
 
   const getBannerImageUrl = (imageUrl) => {
     if (!imageUrl) return '/images/placeholder-banner.png';
     if (imageUrl.startsWith('http')) return imageUrl;
-
     const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
     const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
     return `${baseUrl}${cleanPath}`;
   };
 
+  const whatsappContacts = contacts.filter(c => c.platform === 'WhatsApp');
+  const telegramContacts = contacts.filter(c => c.platform === 'Telegram');
+
   if (isLoading) {
     return (
-      <div className="rounded-md bg-white p-4 md:p-6 shadow-sm">
-        <div className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-500 font-medium">Memuat data...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600 font-medium">Memuat data...</p>
         </div>
       </div>
     );
   }
 
-  // Grouping contacts by platform
-  const whatsappContacts = contacts.filter(c => c.platform === 'WhatsApp');
-  const telegramContacts = contacts.filter(c => c.platform === 'Telegram');
-
   return (
-    <div className="rounded-md bg-white p-4 md:p-6 shadow-sm">
-      {/* Global Messages */}
-      {errorMessage && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
-          <XCircleIcon className="w-5 h-5 flex-shrink-0" />
-          <span className="text-sm font-medium">{errorMessage}</span>
-        </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
-      {successMessage && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2 animate-fade-in">
-          <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
-          <span className="text-sm font-medium">{successMessage}</span>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h1 className="text-2xl font-bold text-gray-800">Manajemen Konten</h1>
+          <p className="text-gray-600 mt-1">Kelola kontak, rekening, dan banner website</p>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* WHATSAPP CONTACT CARD */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-l from-green-400 to-green-200 flex items-center justify-between p-4">
-            <h3 className="font-semibold text-gray-800">WhatsApp</h3>
-            <ModalButton
-              type="button"
-              onClick={() => handleOpenModal('Contact')}
-              className="text-sm bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition"
+        {/* WhatsApp Section */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <Phone size={24} />
+              <h2 className="text-lg font-semibold">WhatsApp</h2>
+            </div>
+            <button
+              onClick={() => openModal('whatsapp')}
+              className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition-colors flex items-center gap-2"
             >
-              + Tambah
-            </ModalButton>
+              <Plus size={18} />
+              Tambah
+            </button>
           </div>
 
-          {whatsappContacts.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-              <div className="text-center">
-                <InformationCircleIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+          <div className="p-4">
+            {whatsappContacts.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <Phone size={48} className="mx-auto mb-3 opacity-50" />
                 <p>Belum ada kontak WhatsApp</p>
               </div>
-            </div>
-          ) : (
-            <div className="p-4 space-y-3 max-h-56 overflow-y-auto">
-              {whatsappContacts.map((c) => (
-                <div
-                  key={c.id}
-                  className={`relative border p-3 rounded-lg space-y-2 ${
-                    c.isActive ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {c.isActive && (
-                        <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
-                          Aktif
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => openConfirm("contact", c.id, "kontak WhatsApp")}
-                      className="text-white bg-red-500 p-1.5 rounded-md hover:bg-red-700 transition"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div>
-                    <span className="text-xs text-gray-500">Nomor:</span>
-                    <p className="text-sm text-gray-700 font-medium">{c.number}</p>
-                  </div>
-                  
-                  {c.link && (
-                    <div>
-                      <span className="text-xs text-gray-500">Link:</span>
-                      <p className="text-sm text-blue-600 underline break-all">{c.link}</p>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => handleToggleActive('contact', c.id, c.isActive)}
-                    disabled={toggleLoading === c.id}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition ${
-                      toggleLoading === c.id
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : c.isActive
-                        ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+            ) : (
+              <div className="space-y-2">
+                {whatsappContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                      contact.isActive
+                        ? 'border-green-200 bg-green-50'
+                        : 'border-gray-200 bg-gray-50'
                     }`}
                   >
-                    {toggleLoading === c.id ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Memproses...
-                      </span>
-                    ) : c.isActive ? (
-                      'Nonaktifkan'
-                    ) : (
-                      'Aktifkan'
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        contact.isActive ? 'bg-green-500' : 'bg-gray-400'
+                      }`}>
+                        <Phone className="text-white" size={20} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-800">{contact.number}</p>
+                          {contact.isActive && (
+                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">
+                              Aktif
+                            </span>
+                          )}
+                        </div>
+                        {contact.link && (
+                          <p className="text-sm text-blue-600 truncate">{contact.link}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleActive('contact', contact.id, contact.isActive)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          contact.isActive
+                            ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                            : 'bg-green-500 hover:bg-green-600 text-white'
+                        }`}
+                      >
+                        {contact.isActive ? <PowerOff size={20} /> : <Power size={20} />}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteTarget({ type: 'contact', id: contact.id });
+                          setConfirmOpen(true);
+                        }}
+                        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* TELEGRAM CONTACT CARD */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-l from-blue-400 to-blue-200 flex items-center justify-between p-4">
-            <h3 className="font-semibold text-gray-800">Telegram</h3>
-            <ModalButton
-              type="button"
-              onClick={() => handleOpenModal('Contact')}
-              className="text-sm bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg transition"
+        {/* Telegram Section */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <MessageCircle size={24} />
+              <h2 className="text-lg font-semibold">Telegram</h2>
+            </div>
+            <button
+              onClick={() => openModal('telegram')}
+              className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
             >
-              + Tambah
-            </ModalButton>
+              <Plus size={18} />
+              Tambah
+            </button>
           </div>
 
-          {telegramContacts.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-              <div className="text-center">
-                <InformationCircleIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+          <div className="p-4">
+            {telegramContacts.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <MessageCircle size={48} className="mx-auto mb-3 opacity-50" />
                 <p>Belum ada kontak Telegram</p>
               </div>
-            </div>
-          ) : (
-            <div className="p-4 space-y-3 max-h-56 overflow-y-auto">
-              {telegramContacts.map((c) => (
-                <div
-                  key={c.id}
-                  className={`relative border p-3 rounded-lg space-y-2 ${
-                    c.isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {c.isActive && (
-                        <span className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
-                          Aktif
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => openConfirm("contact", c.id, "kontak Telegram")}
-                      className="text-white bg-red-500 p-1.5 rounded-md hover:bg-red-700 transition"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div>
-                    <span className="text-xs text-gray-500">Nomor:</span>
-                    <p className="text-sm text-gray-700 font-medium">{c.number}</p>
-                  </div>
-                  
-                  {c.link && (
-                    <div>
-                      <span className="text-xs text-gray-500">Link:</span>
-                      <p className="text-sm text-blue-600 underline break-all">{c.link}</p>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => handleToggleActive('contact', c.id, c.isActive)}
-                    disabled={toggleLoading === c.id}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition ${
-                      toggleLoading === c.id
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : c.isActive
-                        ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+            ) : (
+              <div className="space-y-2">
+                {telegramContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                      contact.isActive
+                        ? 'border-blue-200 bg-blue-50'
+                        : 'border-gray-200 bg-gray-50'
                     }`}
                   >
-                    {toggleLoading === c.id ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Memproses...
-                      </span>
-                    ) : c.isActive ? (
-                      'Nonaktifkan'
-                    ) : (
-                      'Aktifkan'
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* REKENING CARD */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-l from-purple-400 to-purple-200 flex items-center justify-between p-4">
-            <h3 className="font-semibold text-gray-800">Rekening Bank</h3>
-            <ModalButton
-              type="button"
-              onClick={() => handleOpenModal('Rekening')}
-              className="text-sm bg-purple-600 text-white hover:bg-purple-700 px-3 py-1.5 rounded-lg transition"
-            >
-              + Tambah
-            </ModalButton>
-          </div>
-
-          {rekenings.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-              <div className="text-center">
-                <InformationCircleIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>Belum ada data rekening</p>
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        contact.isActive ? 'bg-blue-500' : 'bg-gray-400'
+                      }`}>
+                        <MessageCircle className="text-white" size={20} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-800">{contact.number}</p>
+                          {contact.isActive && (
+                            <span className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                              Aktif
+                            </span>
+                          )}
+                        </div>
+                        {contact.link && (
+                          <p className="text-sm text-blue-600 truncate">{contact.link}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleActive('contact', contact.id, contact.isActive)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          contact.isActive
+                            ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        }`}
+                      >
+                        {contact.isActive ? <PowerOff size={20} /> : <Power size={20} />}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteTarget({ type: 'contact', id: contact.id });
+                          setConfirmOpen(true);
+                        }}
+                        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : (
-            <div className="p-4 space-y-3 max-h-56 overflow-y-auto">
-              {rekenings.map((r) => (
-                <div
-                  key={r.id}
-                  className={`relative border p-3 rounded-lg space-y-2 ${
-                    r.isActive ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {r.isActive && (
-                        <span className="px-2 py-0.5 bg-purple-500 text-white text-xs rounded-full">
-                          Aktif
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => openConfirm("rekening", r.id, "rekening")}
-                      className="text-white bg-red-500 p-1.5 rounded-md hover:bg-red-700 transition"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div>
-                    <span className="text-xs text-gray-500">Nama Bank:</span>
-                    <p className="text-sm font-semibold text-gray-800">{r.bankName}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500">Nama Pemilik:</span>
-                    <p className="text-sm text-gray-700">{r.accountHolder}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500">Nomor Rekening:</span>
-                    <p className="text-sm text-gray-700 font-mono">{r.accountNumber}</p>
-                  </div>
-
-                  <button
-                    onClick={() => handleToggleActive('rekening', r.id, r.isActive)}
-                    disabled={toggleLoading === r.id}
-                    className={`w-full py-2 rounded-lg text-sm font-medium transition ${
-                      toggleLoading === r.id
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : r.isActive
-                        ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                    }`}
-                  >
-                    {toggleLoading === r.id ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Memproses...
-                      </span>
-                    ) : r.isActive ? (
-                      'Nonaktifkan'
-                    ) : (
-                      'Aktifkan'
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* BANNER CARD */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-l from-orange-400 to-orange-200 flex items-center justify-between p-4">
-            <h3 className="font-semibold text-gray-800">Banner</h3>
-            <ModalButton
-              type="button"
-              onClick={() => handleOpenModal('Banner')}
-              className="text-sm bg-orange-600 text-white hover:bg-orange-700 px-3 py-1.5 rounded-lg transition"
+        {/* Rekening Section */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <Building2 size={24} />
+              <h2 className="text-lg font-semibold">Rekening Bank</h2>
+            </div>
+            <button
+              onClick={() => openModal('rekening')}
+              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-purple-50 transition-colors flex items-center gap-2"
             >
-              + Tambah
-            </ModalButton>
+              <Plus size={18} />
+              Tambah
+            </button>
           </div>
 
-          {banners.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-              <div className="text-center">
-                <InformationCircleIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+          <div className="p-4">
+            {rekenings.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <Building2 size={48} className="mx-auto mb-3 opacity-50" />
+                <p>Belum ada rekening bank</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {rekenings.map((rekening) => (
+                  <div
+                    key={rekening.id}
+                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                      rekening.isActive
+                        ? 'border-purple-200 bg-purple-50'
+                        : 'border-gray-200 bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        rekening.isActive ? 'bg-purple-500' : 'bg-gray-400'
+                      }`}>
+                        <Building2 className="text-white" size={20} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-800">{rekening.bankName}</p>
+                          {rekening.isActive && (
+                            <span className="px-2 py-0.5 bg-purple-500 text-white text-xs rounded-full">
+                              Aktif
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{rekening.accountHolder}</p>
+                        <p className="text-sm text-gray-500 font-mono">{rekening.accountNumber}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleActive('rekening', rekening.id, rekening.isActive)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          rekening.isActive
+                            ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                            : 'bg-purple-500 hover:bg-purple-600 text-white'
+                        }`}
+                      >
+                        {rekening.isActive ? <PowerOff size={20} /> : <Power size={20} />}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteTarget({ type: 'rekening', id: rekening.id });
+                          setConfirmOpen(true);
+                        }}
+                        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Banner Section */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <ImageIcon size={24} />
+              <h2 className="text-lg font-semibold">Banner</h2>
+            </div>
+            <button
+              onClick={() => openModal('banner')}
+              className="bg-white text-orange-600 px-4 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Tambah
+            </button>
+          </div>
+
+          <div className="p-4">
+            {banners.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <ImageIcon size={48} className="mx-auto mb-3 opacity-50" />
                 <p>Belum ada banner</p>
               </div>
-            </div>
-          ) : (
-            <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-              {banners.map((b) => (
-                <div
-                  key={b.id}
-                  className="relative border border-gray-200 p-3 rounded-lg bg-gray-50 space-y-1"
-                >
-                  <button
-                    onClick={() => openConfirm("banner", b.id, "banner")}
-                    className="absolute top-2 right-2 text-white bg-red-500 p-2 rounded-md hover:bg-red-700 cursor-pointer z-10 transition"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                  <div>
-                    <span className="text-xs text-gray-500">Judul:</span>
-                    <p className="text-sm font-semibold">{b.title}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500">Banner:</span>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {banners.map((banner) => (
+                  <div key={banner.id} className="relative rounded-lg overflow-hidden border-2 border-gray-200 group">
                     <img
-                      src={getBannerImageUrl(b.imageUrl)}
-                      alt={b.title}
-                      className="w-full h-40 object-cover rounded mt-1"
+                      src={getBannerImageUrl(banner.imageUrl)}
+                      alt={banner.title}
+                      className="w-full h-48 object-cover"
                       onError={(e) => {
                         e.currentTarget.src = '/images/placeholder-banner.png';
                       }}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
+                      <p className="text-white font-semibold">{banner.title}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDeleteTarget({ type: 'banner', id: banner.id });
+                        setConfirmOpen(true);
+                      }}
+                      className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <ModalBoxDisplayComponent isOpen={isModalOpen} onClose={handleCloseModal}>
-        {renderModalContent()}
-      </ModalBoxDisplayComponent>
+      {/* WhatsApp Modal */}
+      <Modal
+        isOpen={modals.whatsapp}
+        onClose={() => closeModal('whatsapp')}
+        title="Tambah WhatsApp"
+        icon={Phone}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit('whatsapp'); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nomor WhatsApp <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.whatsapp.number}
+              onChange={(e) => handleChange('whatsapp', 'number', e.target.value)}
+              placeholder="628123456789"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Link (Opsional)</label>
+            <input
+              type="url"
+              value={formData.whatsapp.link}
+              onChange={(e) => handleChange('whatsapp', 'link', e.target.value)}
+              placeholder="https://wa.me/628123456789"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-lg transition-colors"
+          >
+            Simpan
+          </button>
+        </form>
+      </Modal>
 
+      {/* Telegram Modal */}
+      <Modal
+        isOpen={modals.telegram}
+        onClose={() => closeModal('telegram')}
+        title="Tambah Telegram"
+        icon={MessageCircle}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit('telegram'); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nomor Telegram <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.telegram.number}
+              onChange={(e) => handleChange('telegram', 'number', e.target.value)}
+              placeholder="628123456789"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Link (Opsional)</label>
+            <input
+              type="url"
+              value={formData.telegram.link}
+              onChange={(e) => handleChange('telegram', 'link', e.target.value)}
+              placeholder="https://t.me/username"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors"
+          >
+            Simpan
+          </button>
+        </form>
+      </Modal>
+
+      {/* Rekening Modal */}
+      <Modal
+        isOpen={modals.rekening}
+        onClose={() => closeModal('rekening')}
+        title="Tambah Rekening"
+        icon={Building2}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit('rekening'); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nama Bank <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.rekening.bankName}
+              onChange={(e) => handleChange('rekening', 'bankName', e.target.value)}
+              placeholder="BCA, Mandiri, BRI"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nama Pemilik Rekening <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.rekening.accountHolder}
+              onChange={(e) => handleChange('rekening', 'accountHolder', e.target.value)}
+              placeholder="John Doe"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nomor Rekening <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.rekening.accountNumber}
+              onChange={(e) => handleChange('rekening', 'accountNumber', e.target.value)}
+              placeholder="1234567890"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 rounded-lg transition-colors"
+          >
+            Simpan
+          </button>
+        </form>
+      </Modal>
+
+      {/* Banner Modal */}
+      <Modal
+        isOpen={modals.banner}
+        onClose={() => closeModal('banner')}
+        title="Tambah Banner"
+        icon={ImageIcon}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit('banner'); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Judul Banner <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.banner.title}
+              onChange={(e) => handleChange('banner', 'title', e.target.value)}
+              placeholder="Masukkan judul banner"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Gambar <span className="text-red-500">*</span>
+            </label>
+            <label
+              htmlFor="bannerUpload"
+              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition overflow-hidden"
+            >
+              {formData.banner.imagePreview ? (
+                <img
+                  src={formData.banner.imagePreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center">
+                  <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600">Klik untuk memilih gambar</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP (Max 5MB)</p>
+                </div>
+              )}
+              <input
+                type="file"
+                id="bannerUpload"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={handleBannerImage}
+              />
+            </label>
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg transition-colors"
+          >
+            Simpan
+          </button>
+        </form>
+      </Modal>
+
+      {/* Confirm Delete */}
       {confirmOpen && (
         <ConfirmPopup
           isOpen={confirmOpen}
-          message={confirmMessage}
-          onCancel={closeConfirm}
-          onConfirm={handleConfirmDelete}
-          isLoading={deleteLoading}
+          message="Apakah Anda yakin ingin menghapus data ini?"
+          onCancel={() => {
+            setConfirmOpen(false);
+            setDeleteTarget(null);
+          }}
+          onConfirm={handleDelete}
         />
       )}
     </div>

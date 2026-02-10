@@ -6,36 +6,35 @@ import ProductCard from "./modal/card";
 import AddIcon from "@/assets/icons/productIcons/add.png";
 import Image from "next/image";
 import { AddProductModal } from "./modal/tambah.product";
-import axios from "@/app/lib/axios"; // ← Pastikan import dari sini
+import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
 
-export default function ContentProductPage() { // ← Hapus props products
+export default function ContentProductPage({ products = [] }) {
   const itemsPerPage = 12;
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [allProducts, setAllProducts] = useState([]);
-  const [loading, setLoading] = useState(true); // ← Tambah loading state
+  const [allProducts, setAllProducts] = useState(products || []);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Fetch data di sini
+  // Optional: Re-fetch products on mount jika diperlukan
   useEffect(() => {
-    fetchProducts();
+    // Jika initial products kosong dan ingin fetch ulang
+    if (!products || products.length === 0) {
+      fetchProducts();
+    }
   }, []);
 
   const fetchProducts = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      console.log('📤 Fetching products...');
-      
-      const response = await axios.get("/api/products");
-      
-      console.log('✅ Products fetched:', response.data);
-      setAllProducts(response.data.data || []);
-      
+      const res = await axios.get("/api/products");
+      const data = res.data.data || res.data || [];
+      setAllProducts(data);
     } catch (error) {
-      console.error('❌ Error fetching products:', error);
-      toast.error(error.response?.data?.message || 'Gagal mengambil data products');
+      console.error("Failed to fetch products:", error);
+      toast.error("Gagal memuat produk");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -48,14 +47,30 @@ export default function ContentProductPage() { // ← Hapus props products
   };
 
   const handleAddProduct = async (payload) => {
+    const toastId = toast.loading("Menambah produk...");
+
     try {
       const res = await axios.post("/api/product/create", payload);
       const newProduct = res.data.data;
       setAllProducts((prev) => [newProduct, ...prev]);
-      toast.success('Produk berhasil ditambahkan!');
+      
+      toast.update(toastId, {
+        render: "Produk berhasil ditambahkan!",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+      
+      setIsModalOpen(false);
     } catch (error) {
-      console.error('Error adding product:', error);
-      toast.error(error.response?.data?.message || 'Gagal menambah produk');
+      console.error("Gagal menambah produk:", error);
+      
+      toast.update(toastId, {
+        render: error.response?.data?.message || "Gagal menambah produk",
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
     }
   };
 
@@ -85,11 +100,10 @@ export default function ContentProductPage() { // ← Hapus props products
     }
   };
 
-  // ✅ Loading state
-  if (loading) {
+  if (isLoading && allProducts.length === 0) {
     return (
-      <div className="mb-4 bg-white rounded-md p-3 flex justify-center items-center min-h-[400px]">
-        <div className="text-lg text-gray-500">Loading products...</div>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -112,40 +126,45 @@ export default function ContentProductPage() { // ← Hapus props products
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {currentPageData.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onDeleteSuccess={handleDeleteProduct}
-          />
-        ))}
-      </div>
-
-      {pageCount > 1 && (
-        <div className="flex justify-center mt-6">
-          <ReactPaginate
-            previousLabel={"<"}
-            nextLabel={">"}
-            pageCount={pageCount}
-            onPageChange={handlePageClick}
-            containerClassName="flex gap-2 items-center justify-center select-none text-sm"
-            pageClassName="group"
-            pageLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
-            activeLinkClassName="border-blue-400 text-blue-600 font-semibold"
-            previousClassName="group"
-            previousLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
-            nextClassName="group"
-            nextLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
-            disabledClassName="opacity-40 cursor-not-allowed"
-            breakLabel="..."
-            breakLinkClassName="block px-3 py-1 text-gray-500"
-          />
+      {allProducts.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg">Tidak ada produk</p>
+          <p className="text-sm mt-2">Klik tombol "Tambah Data" untuk menambah produk baru</p>
         </div>
-      )}
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {currentPageData.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onDeleteSuccess={handleDeleteProduct}
+              />
+            ))}
+          </div>
 
-      {allProducts.length === 0 && (
-        <p className="text-center text-gray-500 py-8">Tidak ada produk.</p>
+          {pageCount > 1 && (
+            <div className="flex justify-center mt-6">
+              <ReactPaginate
+                previousLabel={"<"}
+                nextLabel={">"}
+                pageCount={pageCount}
+                onPageChange={handlePageClick}
+                containerClassName="flex gap-2 items-center justify-center select-none text-sm"
+                pageClassName="group"
+                pageLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
+                activeLinkClassName="border-blue-400 text-blue-600 font-semibold"
+                previousClassName="group"
+                previousLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
+                nextClassName="group"
+                nextLinkClassName="block px-3 py-1 border border-gray-300 rounded-md bg-white cursor-pointer hover:bg-gray-100 transition"
+                disabledClassName="opacity-40 cursor-not-allowed"
+                breakLabel="..."
+                breakLinkClassName="block px-3 py-1 text-gray-500"
+              />
+            </div>
+          )}
+        </>
       )}
 
       <AddProductModal

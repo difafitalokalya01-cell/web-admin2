@@ -4,19 +4,19 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function RootPage() {
-  const router = useRouter();
+    const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem('admin_token');
+//   useEffect(() => {
+//     const token = localStorage.getItem('admin_token');
     
-    if (token) {
-      console.log("✅ Token found, redirecting to dashboard");
-      router.push('/dashboard');
-    } else {
-      console.log("🚫 No token, redirecting to login");
+//     if (token) {
+//       console.log("✅ Token found, redirecting to dashboard");
+//       router.push('/dashboard');
+//     } else {
+//       console.log("🚫 No token, redirecting to login");
       router.push('/login');
-    }
-  }, [router]);
+//     }
+//   }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

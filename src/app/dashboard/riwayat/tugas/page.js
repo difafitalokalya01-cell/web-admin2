@@ -1,56 +1,51 @@
+
+'use client' // Tambahkan ini di atas
+
 import ModalTaskContent from "./component.js/content";
-import { getServerAxios } from "@/app/lib/axios.client";
+import { useEffect, useState } from 'react';
 
-export const dynamic = 'force-dynamic';
+export default function TaskHistoriPage() {
+    const [tasks, setTasks] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-export default async function TaskHistoriPage() {
-    const defaultData = [];
-
-    try {
-        const axiosWithAuth = await getServerAxios();
-
-        // Ambil semua tasks tanpa filter atau dengan filter COMPLETED
-        const tasksRes = await axiosWithAuth.get('/api/admin/tasks', {
-            params: {
-                limit: 1000, // Ambil banyak data sekaligus
-                // status: 'COMPLETED' // Uncomment jika hanya mau COMPLETED
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                // Gunakan client axios yang sudah ada interceptor
+                const response = await axios.get('/api/admin/tasks', {
+                    params: { limit: 1000 }
+                });
+                setTasks(response.data?.data?.tasks || []);
+            } catch (err) {
+                setError(err);
+                console.error('Error loading tasks:', err);
+            } finally {
+                setIsLoading(false);
             }
-        });
+        };
 
-        // Akses tasks dari response
-        const tasks = tasksRes.data?.data?.tasks || defaultData;
+        fetchData();
+    }, []);
 
-        console.log('✅ Riwayat Tugas loaded:', {
-            total: tasks.length,
-            sample: tasks.slice(0, 3)
-        });
-
+    if (error && error.response?.status === 401) {
         return (
-            <section className="w-full min-h-screen">
-                <ModalTaskContent dataUsers={tasks} />
-            </section>
-        );
-
-    } catch (error) {
-        console.error('❌ Error loading Riwayat Tugas:', {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data, // Tambahkan ini untuk lihat error detail
-            endpoint: error.config?.url
-        });
-        
-        if (error.response?.status === 401) {
-            return (
-                <section className="w-full min-h-screen flex items-center justify-center bg-gray-50">
-                    {/* ... UI unauthorized ... */}
-                </section>
-            );
-        }
-        
-        return (
-            <section className="w-full min-h-screen">
-                <ModalTaskContent dataUsers={defaultData} />
+            <section className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-red-600 mb-4">Unauthorized</h1>
+                    <p className="text-gray-600">Silakan login terlebih dahulu</p>
+                    <a href="/login" className="mt-4 inline-block px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Login
+                    </a>
+                </div>
             </section>
         );
     }
+
+    return (
+        <section className="w-full min-h-screen">
+            <ModalTaskContent dataUsers={tasks} />
+        </section>
+    );
 }
