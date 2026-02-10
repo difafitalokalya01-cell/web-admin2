@@ -11,10 +11,6 @@ export default function ProductCard({ product, onDeleteSuccess }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // const imageUrl = product?.imageUrl
-  //   ? `${BASE_URL}${product.imageUrl}`
-  //   : null;
-
   const handleDelete = () => {
     setIsConfirmOpen(true);
   };
