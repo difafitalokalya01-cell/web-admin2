@@ -28,8 +28,8 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
   const handleEdit = () => setIsOpenModal(true);
 
   const handleDelete = () => {
-    onDeleteClick(user);
-    setTimeout(onClose, 200);
+    onDeleteClick(user.id);
+    setTimeout(onClose);
   };
 
   const handleLock = () => {

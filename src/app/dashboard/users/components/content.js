@@ -26,6 +26,7 @@ const fetcher = async (url) => {
 export default function ContentUserPage({ initialData = [] }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const usersPerPage = 50;
@@ -93,7 +94,7 @@ export default function ContentUserPage({ initialData = [] }) {
   );
 
   const [users, setUsers] = useState(() => usersData ?? initialData ?? []);
-  const userId = users.id;
+  console.log(users);
 
   useEffect(() => {
     if (usersData) {
@@ -135,8 +136,8 @@ export default function ContentUserPage({ initialData = [] }) {
     setIsModalOpen(false);
   };
 
-  const handleDelete = (user) => {
-    setUserToDelete(user);
+  const handleDelete = (userId) => {
+    setUserToDelete(userId);
     setIsConfirmOpen(true);
   };
 
@@ -146,9 +147,19 @@ export default function ContentUserPage({ initialData = [] }) {
 
   const handleConfirmDeleteById = async () => {
     const toastId = toast.loading('Menghapus user...');
-    
+
+    if(!userToDelete) {
+      toast.update(toastId, {
+        render: "User tidak tersedia",
+        type: "error",
+        isLoading: false,
+        autoClose: 2000
+      });
+      return;
+    }
+
     try {
-      await axios.delete(`/api/admin/user/delete/${userId}`);
+      await axios.delete(`/api/admin/user/delete/${userToDelete}`);
 
       toast.update(toastId, {
         render: "User berhasil dihapus",
@@ -288,6 +299,9 @@ export default function ContentUserPage({ initialData = [] }) {
               <tbody className="divide-y divide-gray-200">
                 {displayUsers.map((user, index) => {
                   const globalIndex = pagesVisited + index + 1;
+
+                  console.log(user);
+
                   return (
                     <tr
                       key={user.id}
@@ -301,7 +315,9 @@ export default function ContentUserPage({ initialData = [] }) {
                           <img
                             src={
                               user.profilePicture
-                                ? `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}`
+                                ? (user.profilePicture.startsWith('https') 
+                                    ? user.profilePicture 
+                                    : `${process.env.NEXT_PUBLIC_API_URL}${user.profilePicture}`)
                                 : ProfileIcon.src
                             }
                             alt={user.username}
@@ -361,7 +377,7 @@ export default function ContentUserPage({ initialData = [] }) {
                             Detail
                           </button>
                           <button
-                            onClick={() => handleDelete(user)}
+                            onClick={() => handleDelete(user.id)}
                             className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-md transition active:scale-95"
                           >
                             Hapus
