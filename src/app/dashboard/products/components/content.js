@@ -10,7 +10,7 @@ import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
 
 export default function ContentProductPage({ products = [] }) {
-  const itemsPerPage = 12;
+  const itemsPerPage = 16;
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [allProducts, setAllProducts] = useState(products || []);
@@ -25,13 +25,21 @@ export default function ContentProductPage({ products = [] }) {
   }, []);
 
   const fetchProducts = async () => {
+    setIsLoading(true);
     try {
-      const res = await axios.get("/api/products");
-      const data = res.data.data || res.data || [];
+      const res = await axios.get("/api/products", {
+        params: { fetchAll: true }
+      });
+      
+      const data = res.data.data || [];
       setAllProducts(data);
+      
     } catch (error) {
       console.error("Failed to fetch products:", error);
-    } 
+      toast.error(error.response?.data?.message || "Gagal memuat data produk");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const offset = currentPage * itemsPerPage;
