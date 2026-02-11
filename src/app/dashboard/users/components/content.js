@@ -27,7 +27,6 @@ export default function ContentUserPage({ initialData = [] }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [userToDelete, setUserToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const usersPerPage = 50;
   const [pageNumber, setPageNumber] = useState(0);
@@ -94,6 +93,7 @@ export default function ContentUserPage({ initialData = [] }) {
   );
 
   const [users, setUsers] = useState(() => usersData ?? initialData ?? []);
+  const userId = users.id;
 
   useEffect(() => {
     if (usersData) {
@@ -148,7 +148,7 @@ export default function ContentUserPage({ initialData = [] }) {
     const toastId = toast.loading('Menghapus user...');
     
     try {
-      await axios.delete(`/api/admin/user-data/${userToDelete.id}`);
+      await axios.delete(`/api/admin/user/delete/${userId}`);
 
       toast.update(toastId, {
         render: "User berhasil dihapus",
