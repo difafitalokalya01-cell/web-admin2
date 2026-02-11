@@ -93,7 +93,7 @@ export default function ContentUserPage({ initialData = [] }) {
   );
 
   const [users, setUsers] = useState(() => usersData ?? initialData ?? []);
-  const userId = users.id
+  const userId = users.id;
 
   useEffect(() => {
     if (usersData) {
@@ -148,7 +148,7 @@ export default function ContentUserPage({ initialData = [] }) {
     const toastId = toast.loading('Menghapus user...');
     
     try {
-      await axios.delete(`/api/admin/user/delete/${userToDelete.id}`);
+      await axios.delete(`/api/admin/user/delete/${userId}`);
 
       toast.update(toastId, {
         render: "User berhasil dihapus",
