@@ -58,10 +58,10 @@ export default function ModalSelectProduct({
     // ✅ Perbaikan: Gunakan parameter price & props userLevel yang benar
     const calculateCommission = (price) => {
         const levelMap = {
-            CLASSIC: 15,
-            SILVER: 20,
-            GOLD: 25,
-            PLATINUM: 30
+            CLASSIC: 20,
+            SILVER: 25,
+            GOLD: 30,
+            PLATINUM: 35
         };
 
         // userLevel adalah string seperti "CLASSIC", bukan object
@@ -72,10 +72,10 @@ export default function ModalSelectProduct({
     // ✅ Perbaikan: Gunakan props userLevel yang benar
     const getCommissionPercentage = () => {
         const levelMap = {
-            CLASSIC: 15,
-            SILVER: 20,
-            GOLD: 25,
-            PLATINUM: 30
+            CLASSIC: 20,
+            SILVER: 25,
+            GOLD: 30,
+            PLATINUM: 35
         };
         return levelMap[userLevel.toUpperCase()] || 15;
     };
