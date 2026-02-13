@@ -28,7 +28,7 @@ export default function ModalSelectProduct({
     const fetchProducts = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get('/api/products', {params: {isAssigned: false}});
+            const response = await axios.get('/api/products');
             setProducts(response.data?.data || []);
         } catch (error) {
             console.error('Error fetching products:', error);
