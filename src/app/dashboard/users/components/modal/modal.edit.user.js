@@ -10,6 +10,7 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
     username: "",
     email: "",
     balance: 0,
+    additionalBalance: 0,
   });
 
   const [originalBalance, setOriginalBalance] = useState(0);
@@ -21,6 +22,7 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
         username: user.username || "",
         email: user.email || "",
         balance: user.balance || 0,
+        additionalBalance: 0,
       });
       setOriginalBalance(user.balance || 0);
     }
@@ -36,11 +38,13 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
     const toastId = toast.loading("Menyimpan perubahan...");
     
     try {
-      // ✅ Validasi balance
-      const numBalance = parseInt(formData.balance);
-      if (isNaN(numBalance) || numBalance < 0) {
+      const numBalance = parseInt(formData.balance) || 0;
+      const numAdditional = parseInt(formData.additionalBalance) || 0;
+      const totalBalance = numBalance + numAdditional;
+
+      if (totalBalance < 0) {
         toast.update(toastId, {
-          render: "Balance harus berupa angka valid (minimal 0)",
+          render: "Total balance tidak boleh negatif",
           type: "error",
           isLoading: false,
           autoClose: 2000
@@ -48,12 +52,11 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
         return;
       }
 
-      // ✅ Kirim hanya field yang diperlukan
       const payload = {
         id: formData.id,
         username: formData.username,
         email: formData.email,
-        balance: numBalance
+        balance: totalBalance
       };
 
       console.log('📤 Sending payload:', payload);
@@ -67,7 +70,6 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
         autoClose: 2000
       });
 
-      // ✅ Refresh data
       if (onMutate) {
         await onMutate();
       }
@@ -91,7 +93,6 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
           message = data?.message || 'Data tidak valid';
         } else if (status === 500) {
           message = data?.message || 'Terjadi kesalahan server';
-          // Show detail error in dev mode
           if (data?.error) {
             console.error('Server error detail:', data.error);
           }
@@ -107,8 +108,9 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
     }
   };
 
-  const balanceChange = parseInt(formData.balance || 0) - originalBalance;
-  const isBalanceChanged = balanceChange !== 0;
+  const additionalBalance = parseInt(formData.additionalBalance) || 0;
+  const totalBalance = (parseInt(formData.balance) || 0) + additionalBalance;
+  const isBalanceChanged = additionalBalance !== 0;
 
   return (
     <div
@@ -118,7 +120,7 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
       aria-modal="true"
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-md relative overflow-hidden"
+        className="bg-white rounded-xl shadow-xl w-full max-w-2xl relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -168,37 +170,75 @@ export default function ModalEditUserData({ user, onClose, onMutate }) {
             />
           </div>
 
-          {/* Balance */}
+          {/* Balance Section - Horizontal Layout */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Saldo (Rp)
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Saldo Pengguna
             </label>
-            <input
-              type="number"
-              name="balance"
-              value={formData.balance}
-              onChange={handleChange}
-              min="0"
-              step="1000"
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              required
-            />
             
-            {/* Balance Change Indicator */}
+            {/* Grid 2 Kolom */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Kolom Kiri - Saldo Saat Ini */}
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-gray-600">
+                  Saldo Saat Ini
+                </label>
+                <div className="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                  <p className="text-xs text-gray-500 mb-1">Rp</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {formData.balance.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Kolom Kanan - Tambah */}
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-gray-600">
+                  Tambah
+                </label>
+                <div className="border border-gray-300 rounded-lg p-3 bg-gray-50">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rp</span>
+                    <input
+                      type="number"
+                      name="additionalBalance"
+                      value={formData.additionalBalance}
+                      onChange={handleChange}
+                      className="w-full border-none bg-transparent p-2 pl-8 text-xl font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  (+) Tambah 
+                </p>
+              </div>
+            </div>
+
+            {/* Total Balance Preview */}
             {isBalanceChanged && (
-              <div className={`mt-2 p-2 rounded-md text-sm font-medium ${
-                balanceChange > 0 
-                  ? 'bg-green-50 text-green-700' 
-                  : 'bg-red-50 text-red-700'
+              <div className={`mt-4 p-4 rounded-lg border ${
+                additionalBalance > 0 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
               }`}>
-                <span className="text-lg">
-                  {balanceChange > 0 ? '↗' : '↘'}
-                </span>
-                {' '}
-                {balanceChange > 0 ? '+' : ''}
-                Rp {Math.abs(balanceChange).toLocaleString('id-ID')}
-                <div className="text-xs mt-1 opacity-75">
-                  Dari Rp {originalBalance.toLocaleString('id-ID')} → Rp {parseInt(formData.balance).toLocaleString('id-ID')}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Saldo Setelah Perubahan:</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Rp {formData.balance.toLocaleString('id-ID')} 
+                      {additionalBalance > 0 ? ' + ' : ' - '}
+                      Rp {Math.abs(additionalBalance).toLocaleString('id-ID')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Total:</p>
+                    <p className={`text-2xl font-bold ${
+                      additionalBalance > 0 ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      Rp {totalBalance.toLocaleString('id-ID')}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

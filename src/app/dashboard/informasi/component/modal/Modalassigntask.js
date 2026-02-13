@@ -29,26 +29,26 @@ export default function ModalAssignTask({
     }
 
     const levelMap = {
-      CLASSIC: 15,
-      SILVER: 20,
-      GOLD: 25,
-      PLATINUM: 30
+      CLASSIC: 20,
+      SILVER: 25,
+      GOLD: 30,
+      PLATINUM: 35
     };
 
     const userLevel = item.user.userLevel.currentLevel.toUpperCase();
-    const commissionPercentage = levelMap[userLevel] || 15;
+    const commissionPercentage = levelMap[userLevel] || 20;
     
     return Math.floor((selectedProduct.price * commissionPercentage) / 100);
   };
 
   const getCommissionPercentage = () => {
-    if (!item?.user?.userLevel?.currentLevel) return 15;
+    if (!item?.user?.userLevel?.currentLevel) return 20;
 
     const levelMap = {
-      CLASSIC: 15,
-      SILVER: 20,
-      GOLD: 25,
-      PLATINUM: 30
+      CLASSIC: 20,
+      SILVER: 25,
+      GOLD: 30,
+      PLATINUM: 35
     };
 
     return levelMap[item.user.userLevel.currentLevel.toUpperCase()] || 15;

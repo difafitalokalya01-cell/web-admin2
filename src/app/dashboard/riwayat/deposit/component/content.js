@@ -5,11 +5,14 @@ import { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
+import Image from "next/image";
 
 export default function TopupHistoryContent({ dataUsers: initialData = [] }) {
     const [dataUsers, setDataUsers] = useState(initialData);
     const [isLoading, setIsLoading] = useState(false);
     const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     
     const usersPerPage = 50;
     const [pageNumber, setPageNumber] = useState(0);
@@ -139,6 +142,16 @@ export default function TopupHistoryContent({ dataUsers: initialData = [] }) {
         }
     };
 
+    const openImageModal = (imageUrl, topupData) => {
+        setSelectedImage({ url: imageUrl, data: topupData });
+        setIsModalOpen(true);
+    };
+
+    const closeImageModal = () => {
+        setIsModalOpen(false);
+        setTimeout(() => setSelectedImage(null), 300);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             <Header />
@@ -186,6 +199,7 @@ export default function TopupHistoryContent({ dataUsers: initialData = [] }) {
                                     <th className="px-4 py-3 font-semibold">Username</th>
                                     <th className="px-4 py-3 font-semibold hidden lg:table-cell">Email</th>
                                     <th className="px-4 py-3 font-semibold">Jumlah</th>
+                                    <th className="px-4 py-3 font-semibold">Bukti Transfer</th>
                                     <th className="px-4 py-3 font-semibold">Status</th>
                                     <th className="px-4 py-3 font-semibold hidden lg:table-cell">Catatan Admin</th>
                                     <th className="px-4 py-3 font-semibold hidden lg:table-cell">Tanggal Proses</th>
@@ -214,6 +228,21 @@ export default function TopupHistoryContent({ dataUsers: initialData = [] }) {
                                             </td>
                                             <td className="px-4 py-3 font-semibold text-green-600">
                                                 {formatCurrency(topup.amount || 0)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {topup.proofImage ? (
+                                                    <button
+                                                        onClick={() => openImageModal(topup.proofImage, topup)}
+                                                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition active:scale-95 border border-blue-200"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        <span className="text-xs font-medium">Lihat Bukti</span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs italic">Tidak ada</span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(topup.status)}`}>
@@ -285,6 +314,74 @@ export default function TopupHistoryContent({ dataUsers: initialData = [] }) {
                     )}
                 </div>
             </div>
+
+            {/* Image Modal */}
+            {isModalOpen && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    onClick={closeImageModal}
+                >
+                    <div 
+                        className="relative bg-white rounded-xl shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-t-xl">
+                            <div>
+                                <h3 className="text-base font-semibold">Bukti Transfer</h3>
+                                <p className="text-xs text-blue-100 mt-0.5">
+                                    {selectedImage?.data?.user?.username} - {formatCurrency(selectedImage?.data?.amount || 0)}
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeImageModal}
+                                className="p-1.5 hover:bg-white hover:bg-opacity-20 rounded-full transition"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Body - Mengikuti bentuk gambar */}
+                        <div className="p-3">
+                            <div className="flex justify-center items-center">
+                                <div className="relative">
+                                    <Image
+                                        src={selectedImage?.url || ''}
+                                        alt="Bukti Transfer"
+                                        width={500}
+                                        height={300}
+                                        className="w-full max-w-full h-auto rounded-lg shadow-lg object-contain"
+                                        unoptimized
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex justify-end gap-2 p-3 border-t bg-gray-50 rounded-b-xl">
+                            <a
+                                href={selectedImage?.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md transition flex items-center gap-1.5"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                Buka
+                            </a>
+                            <button
+                                onClick={closeImageModal}
+                                className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

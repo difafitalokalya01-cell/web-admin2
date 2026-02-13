@@ -136,7 +136,8 @@ export default function ContentUserPage({ initialData = [] }) {
     setIsModalOpen(false);
   };
 
-  const handleDelete = (userId) => {
+  const handleDelete = (e, userId) => {
+    e.stopPropagation(); // Prevent row click when delete button is clicked
     setUserToDelete(userId);
     setIsConfirmOpen(true);
   };
@@ -305,7 +306,8 @@ export default function ContentUserPage({ initialData = [] }) {
                   return (
                     <tr
                       key={user.id}
-                      className="hover:bg-blue-50 transition-colors"
+                      onClick={() => handleOpenModal(user)}
+                      className="hover:bg-blue-50 transition-colors cursor-pointer group"
                     >
                       <td className="px-4 py-3 text-gray-700 font-medium whitespace-nowrap">
                         {globalIndex}
@@ -321,13 +323,13 @@ export default function ContentUserPage({ initialData = [] }) {
                                 : ProfileIcon.src
                             }
                             alt={user.username}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 group-hover:border-blue-400 transition-colors"
                             onError={(e) => {
                               e.currentTarget.src = ProfileIcon.src;
                             }}
                           />
                           <div className="min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{user.username}</p>
+                            <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{user.username}</p>
                             <p className="text-xs text-gray-500">
                               {user.isVerified ? '✓ Verified' : '⚠ Unverified'}
                             </p>
@@ -371,16 +373,13 @@ export default function ContentUserPage({ initialData = [] }) {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex justify-center gap-2">
                           <button
-                            onClick={() => handleOpenModal(user)}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition active:scale-95"
+                            onClick={(e) => handleDelete(e, user.id)}
+                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
+                            title="Hapus user"
                           >
-                            Detail
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user.id)}
-                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-md transition active:scale-95"
-                          >
-                            Hapus
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
                         </div>
                       </td>

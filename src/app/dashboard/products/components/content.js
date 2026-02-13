@@ -9,34 +9,58 @@ import { AddProductModal } from "./modal/tambah.product";
 import axios from "@/app/lib/axios";
 import { toast } from "react-toastify";
 
-export default function ContentProductPage({ products = [] }) {
+export default function ContentProductPage() { // ✅ Hapus props products
   const itemsPerPage = 16;
   const [currentPage, setCurrentPage] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [allProducts, setAllProducts] = useState(products || []);
-  const [isLoading, setIsLoading] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Optional: Re-fetch products on mount jika diperlukan
+  // ✅ Fetch products on mount
   useEffect(() => {
-    // Jika initial products kosong dan ingin fetch ulang
-    if (!products || products.length === 0) {
-      fetchProducts();
-    }
+    fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
+      console.log("📤 Fetching products...");
+      
       const res = await axios.get("/api/products", {
         params: { fetchAll: true }
       });
       
-      const data = res.data.data || [];
+      const data = res.data.data || res.data || [];
       setAllProducts(data);
       
+      console.log(`✅ Fetched ${data.length} products`);
+      
     } catch (error) {
-      console.error("Failed to fetch products:", error);
-      toast.error(error.response?.data?.message || "Gagal memuat data produk");
+      console.error("❌ Failed to fetch products:", error);
+      
+      // ✅ Error handling yang lebih detail
+      let message = "Gagal memuat data produk";
+      
+      if (error.response) {
+        const { status, data } = error.response;
+        
+        if (status === 401) {
+          message = "Sesi Anda telah berakhir, silakan login ulang";
+          // Optional: redirect ke login
+          window.location.href = "/login";
+        } else if (status === 400) {
+          message = data?.message || "Request tidak valid";
+        } else if (status === 500) {
+          message = "Terjadi kesalahan server";
+        }
+      } else if (error.code === 'ECONNABORTED') {
+        message = "Request timeout, silakan coba lagi";
+      } else if (!error.response) {
+        message = "Tidak dapat terhubung ke server";
+      }
+      
+      toast.error(message);
+      setAllProducts([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -51,16 +75,37 @@ export default function ContentProductPage({ products = [] }) {
   };
 
   const handleAddProduct = async (payload) => {
+    const toastId = toast.loading("Menambah produk...");
 
     try {
       const res = await axios.post("/api/product/create", payload);
       const newProduct = res.data.data;
+      
       setAllProducts((prev) => [newProduct, ...prev]);
+      
+      toast.update(toastId, {
+        render: "Produk berhasil ditambahkan!",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
       
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Gagal menambah produk:", error);
+      console.error("❌ Gagal menambah produk:", error);
       
+      let message = "Gagal menambah produk";
+      
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
+      toast.update(toastId, {
+        render: message,
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
     }
   };
 
@@ -79,10 +124,16 @@ export default function ContentProductPage({ products = [] }) {
         autoClose: 2000,
       });
     } catch (error) {
-      console.error("Gagal menghapus produk:", error);
+      console.error("❌ Gagal menghapus produk:", error);
+      
+      let message = "Gagal menghapus produk";
+      
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
       
       toast.update(toastId, {
-        render: error.response?.data?.message || "Gagal menghapus produk",
+        render: message,
         type: "error",
         isLoading: false,
         autoClose: 2000,
@@ -90,10 +141,14 @@ export default function ContentProductPage({ products = [] }) {
     }
   };
 
-  if (isLoading && allProducts.length === 0) {
+  // ✅ Loading state
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat data produk...</p>
+        </div>
       </div>
     );
   }
@@ -118,7 +173,7 @@ export default function ContentProductPage({ products = [] }) {
 
       {allProducts.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          <p className="text-lg">Tidak ada produk</p>
+          <p className="text-lg font-medium">Tidak ada produk</p>
           <p className="text-sm mt-2">Klik tombol "Tambah Data" untuk menambah produk baru</p>
         </div>
       ) : (
