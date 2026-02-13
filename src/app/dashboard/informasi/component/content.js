@@ -557,6 +557,7 @@ export default function ContentTaskPage({ data: initialData }) {
                     onClose={() => setIsModalProductOpen(false)}
                     onSelect={handleProductSelected}
                      userLevel={getCurrentUserLevel()}
+                     userId={selectedItem?.assignedByUserId}
                 />
             )}
 

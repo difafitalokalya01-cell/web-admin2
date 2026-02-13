@@ -9,53 +9,80 @@ export default function ModalSelectProduct({
   onClose, 
   onSelect,
   userLevel = 'CLASSIC',
-  userId // ✅ Tambah prop userId untuk cek produk yang sudah di-assign
+  userId
 }) {
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [imageLoadStates, setImageLoadStates] = useState({});
-    const [assignedProductIds, setAssignedProductIds] = useState([]); // ✅ State untuk menyimpan ID produk yang sudah di-assign
+    const [assignedProductIds, setAssignedProductIds] = useState([]);
 
     useEffect(() => {
-        fetchProducts();
         if (userId) {
-            fetchAssignedProducts();
+            fetchProductsAndAssignments();
         }
     }, [userId]);
 
-    const fetchProducts = async () => {
-        try {
-            setIsLoading(true);
-            const response = await axios.get('/api/products');
-            setProducts(response.data?.data || []);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            alert('Gagal memuat produk: ' + (error.response?.data?.message || error.message));
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // ✅ Fetch products DAN assignments sekaligus (lebih efisien)
+const fetchProductsAndAssignments = async () => {
+    try {
+        setIsLoading(true);
+        
+        console.log('🔄 Fetching products and assignments for userId:', userId);
 
-    // ✅ Fetch produk yang sudah di-assign ke user ini (status IN_PROGRESS, COMPLETED, VERIFIED)
-    const fetchAssignedProducts = async () => {
-        try {
-            const response = await axios.get('/api/admin/tasks', {
-                params: {
-                    userId: userId,
-                    status: 'IN_PROGRESS,COMPLETED,VERIFIED', // ✅ Ambil semua task yang aktif
-                    fetchOnlyProductIds: 'true' // ✅ Hanya ambil product IDs
+        const [productsRes, tasksRes] = await Promise.all([
+            axios.get('/api/products'),
+            axios.get('/api/admin/tasks', {
+                params: { userId: userId }
+            })
+        ]);
+
+        console.log('✅ Products response:', productsRes.data);
+        console.log('✅ Tasks full response:', tasksRes.data);
+
+        // Set products
+        const allProducts = productsRes.data?.data || [];
+        setProducts(allProducts);
+
+        // ✅ FIX: Access nested tasks array
+        const tasksData = tasksRes.data?.data?.tasks || tasksRes.data?.data || [];
+        console.log('📋 Tasks data:', tasksData);
+
+        // Extract productIds dari tasks yang COMPLETED
+        const assignedIds = tasksData
+            .filter(task => {
+                const isCompleted = task.status === 'COMPLETED' && task.productId;
+                if (isCompleted) {
+                    console.log('✅ Completed task found:', { 
+                        taskId: task.id, 
+                        productId: task.productId,
+                        status: task.status 
+                    });
                 }
-            });
-            
-            const productIds = response.data?.data?.productIds || [];
-            setAssignedProductIds(productIds);
-            console.log('✅ Produk yang sudah di-assign ke user ini:', productIds);
-        } catch (error) {
-            console.error('Error fetching assigned products:', error);
+                return isCompleted;
+            })
+            .map(task => task.productId);
+
+        setAssignedProductIds(assignedIds);
+
+        console.log(`✅ Loaded ${allProducts.length} total products`);
+        console.log(`✅ Found ${assignedIds.length} products already sent:`, assignedIds);
+
+    } catch (error) {
+        console.error('❌ Error fetching data:', error);
+        console.error('❌ Error response:', error.response);
+        
+        if (error.config?.url?.includes('/api/products')) {
+            alert('Gagal memuat produk: ' + (error.response?.data?.message || error.message));
+        } else {
+            console.warn('⚠️ Could not fetch assigned products, showing all products');
+            setAssignedProductIds([]);
         }
-    };
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     useEffect(() => {
         if (products.length > 0) {
@@ -101,7 +128,7 @@ export default function ModalSelectProduct({
         return levelMap[userLevel.toUpperCase()] || 15;
     };
 
-    // ✅ Fungsi untuk cek apakah produk sudah di-assign
+    // ✅ Cek apakah produk sudah pernah di-kirim ke user ini
     const isProductAssigned = (productId) => {
         return assignedProductIds.includes(productId);
     };
@@ -152,8 +179,10 @@ export default function ModalSelectProduct({
                     <div>
                         <h2 className="text-xl font-bold text-white">Pilih Produk</h2>
                         <p className="text-sm text-blue-100 mt-0.5">
-                            {assignedProductIds.length > 0 && (
+                            {assignedProductIds.length > 0 ? (
                                 <span>{assignedProductIds.length} produk sudah di-assign</span>
+                            ) : (
+                                <span>Semua produk tersedia</span>
                             )}
                         </p>
                     </div>
@@ -212,7 +241,6 @@ export default function ModalSelectProduct({
                                 const commissionPercentage = getCommissionPercentage();
                                 const imageState = imageLoadStates[product.id] || { loading: false, error: false };
                                 
-                                // ✅ Cek apakah produk sudah di-assign
                                 const isAssigned = isProductAssigned(product.id);
                                 const isSelected = selectedProduct?.id === product.id;
                                 
@@ -230,14 +258,14 @@ export default function ModalSelectProduct({
                                         }`}
                                         aria-label={`${isAssigned ? 'Produk sudah di-assign' : 'Pilih produk'} ${product.name}`}
                                     >
-                                        {/* ✅ Badge "Sudah Di-assign" */}
+                                        {/* Badge "Sudah Dikirim" */}
                                         {isAssigned && (
                                             <div className="absolute top-2 right-2 z-10">
                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
                                                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                     </svg>
-                                                    Sudah Di-assign
+                                                    Sudah Dikirim
                                                 </span>
                                             </div>
                                         )}
