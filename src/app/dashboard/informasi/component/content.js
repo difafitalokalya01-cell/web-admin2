@@ -270,6 +270,16 @@ export default function ContentTaskPage({ data: initialData }) {
         }).format(amount);
     };
     
+    // Handler untuk klik baris tabel
+    const handleRowClick = (item) => {
+        if (activeTab === 'tasks') {
+            handleOpenAssignTask(item);
+        } else if (activeTab === 'topups') {
+            handleOpenTopup(item);
+        } else if (activeTab === 'withdraws') {
+            handleOpenWithdraw(item);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -337,14 +347,17 @@ export default function ContentTaskPage({ data: initialData }) {
                                         <th className="px-4 py-3 font-semibold">Username</th>
                                         <th className="px-4 py-3 font-semibold">Tugas Ke</th>
                                         <th className="px-4 py-3 font-semibold">Status</th>
-                                        <th className="px-4 py-3 font-semibold text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {displayItems.map((item, index) => {
                                         const globalIndex = pagesVisited + index + 1;
                                         return (
-                                            <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-150">
+                                            <tr 
+                                                key={item.id} 
+                                                onClick={() => handleRowClick(item)}
+                                                className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer hover:shadow-sm"
+                                            >
                                                 <td className="px-4 py-3 text-center font-medium text-gray-700">
                                                     {globalIndex}
                                                 </td>
@@ -361,19 +374,6 @@ export default function ContentTaskPage({ data: initialData }) {
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <StatusBadge status={item.isRead ? 'processed' : 'pending'} />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex justify-center">
-                                                        <button
-                                                            onClick={() => handleOpenAssignTask(item)}
-                                                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
-                                                            title="Kirim Tugas"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -393,14 +393,17 @@ export default function ContentTaskPage({ data: initialData }) {
                                         <th className="px-4 py-3 font-semibold">Status</th>
                                         <th className="px-4 py-3 font-semibold">Jumlah</th>
                                         <th className="px-4 py-3 font-semibold">Saldo</th>
-                                        <th className="px-4 py-3 font-semibold text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {displayItems.map((item, index) => {
                                         const globalIndex = pagesVisited + index + 1;
                                         return (
-                                            <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-150">
+                                            <tr 
+                                                key={item.id} 
+                                                onClick={() => handleRowClick(item)}
+                                                className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer hover:shadow-sm"
+                                            >
                                                 <td className="px-4 py-3 text-center font-medium text-gray-700">
                                                     {globalIndex}
                                                 </td>
@@ -418,19 +421,6 @@ export default function ContentTaskPage({ data: initialData }) {
                                                 </td>
                                                 <td className="px-4 py-3 font-medium">
                                                     {formatCurrency(item.user?.balance || 0)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex justify-center">
-                                                        <button
-                                                            onClick={() => handleOpenTopup(item)}
-                                                            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
-                                                            title="Proses Topup"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -450,14 +440,17 @@ export default function ContentTaskPage({ data: initialData }) {
                                         <th className="px-4 py-3 font-semibold">Status</th>
                                         <th className="px-4 py-3 font-semibold">Jumlah</th>
                                         <th className="px-4 py-3 font-semibold">Saldo</th>
-                                        <th className="px-4 py-3 font-semibold text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {displayItems.map((item, index) => {
                                         const globalIndex = pagesVisited + index + 1;
                                         return (
-                                            <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-150">
+                                            <tr 
+                                                key={item.id} 
+                                                onClick={() => handleRowClick(item)}
+                                                className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer hover:shadow-sm"
+                                            >
                                                 <td className="px-4 py-3 text-center font-medium text-gray-700">
                                                     {globalIndex}
                                                 </td>
@@ -475,19 +468,6 @@ export default function ContentTaskPage({ data: initialData }) {
                                                 </td>
                                                 <td className="px-4 py-3 font-medium">
                                                     {formatCurrency(item.user?.balance || 0)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex justify-center">
-                                                        <button
-                                                            onClick={() => handleOpenWithdraw(item)}
-                                                            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
-                                                            title="Proses Penarikan"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
                                                 </td>
                                             </tr>
                                         );
