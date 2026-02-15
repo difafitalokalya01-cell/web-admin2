@@ -1,11 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Upload, Phone, MessageCircle, Building2, ImageIcon, X, Plus, Trash2, Power, PowerOff } from 'lucide-react';
+import { 
+  Upload, Phone, MessageCircle, Building2, ImageIcon, 
+  X, Plus, Trash2, Power, PowerOff,
+  GripVertical
+} from 'lucide-react';
 import axios from '@/app/lib/axios';
 import ConfirmPopup from '@/app/components/modal/modalConfirm';
 
-// Toast Component
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 const Toast = ({ message, type = 'success', onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -28,7 +48,6 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-// Modern Modal Component
 const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
   if (!isOpen) return null;
 
@@ -55,6 +74,68 @@ const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
   );
 };
 
+function SortableBannerItem({ banner, onDelete, getBannerImageUrl }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: banner.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative rounded-lg overflow-hidden border-2 ${
+        isDragging ? 'border-orange-400 shadow-2xl z-50' : 'border-gray-200'
+      } group bg-white`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="absolute top-2 left-2 p-2 bg-white/90 hover:bg-white rounded-lg shadow-lg cursor-grab active:cursor-grabbing z-10 transition-all"
+        title="Drag untuk mengatur urutan"
+      >
+        <GripVertical size={20} className="text-gray-600" />
+      </button>
+
+      <img
+        src={getBannerImageUrl(banner.imageUrl)}
+        alt={banner.title}
+        className="w-full h-48 object-cover"
+        onError={(e) => {
+          e.currentTarget.src = '/images/placeholder-banner.png';
+        }}
+      />
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-white font-semibold">{banner.title}</p>
+            <p className="text-white/70 text-xs">Order: {banner.order}</p>
+          </div>
+          
+          <button
+            onClick={() => onDelete(banner)}
+            className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Hapus banner"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ContentDisplay({ token }) {
   const [modals, setModals] = useState({
     whatsapp: false,
@@ -70,6 +151,7 @@ export default function ContentDisplay({ token }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   const [formData, setFormData] = useState({
     whatsapp: { number: '', link: '' },
@@ -77,6 +159,13 @@ export default function ContentDisplay({ token }) {
     rekening: { bankName: '', accountNumber: '', accountHolder: '' },
     banner: { title: '', imageFile: null, imagePreview: '' },
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -105,6 +194,50 @@ export default function ContentDisplay({ token }) {
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = banners.findIndex((b) => b.id === active.id);
+    const newIndex = banners.findIndex((b) => b.id === over.id);
+
+    const newBanners = arrayMove(banners, oldIndex, newIndex);
+
+    const updatedBanners = newBanners.map((banner, index) => ({
+      ...banner,
+      order: index
+    }));
+
+    setBanners(updatedBanners);
+
+    await saveBannerOrder(updatedBanners);
+  };
+
+  const saveBannerOrder = async (reorderedBanners) => {
+    setIsSavingOrder(true);
+    try {
+      const payload = reorderedBanners.map((banner) => ({
+        id: banner.id,
+        order: banner.order
+      }));
+
+      await axios.patch('/api/banner/reorder', {
+        banners: payload
+      });
+
+      console.log('✅ Banner order saved');
+      showToast('Urutan banner berhasil diupdate');
+
+    } catch (error) {
+      console.error('❌ Save order error:', error);
+      showToast('Gagal menyimpan urutan banner', 'error');
+      await fetchAllData();
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
 
   const openModal = (type) => {
     setModals(prev => ({ ...prev, [type]: true }));
@@ -202,12 +335,16 @@ export default function ContentDisplay({ token }) {
             showToast("Judul dan gambar banner wajib diisi", "error");
             return;
           }
+          
           const payload = new FormData();
           payload.append("title", formData.banner.title);
           payload.append("image", formData.banner.imageFile);
+          
           await axios.post("/api/banner", payload, {
             headers: { "Content-Type": "multipart/form-data" },
+            timeout: 60000,
           });
+          
           showToast("Banner berhasil ditambahkan");
           break;
         }
@@ -246,16 +383,13 @@ export default function ContentDisplay({ token }) {
       setDeleteTarget(null);
     } catch (error) {
       console.error("Delete error:", error);
-      showToast("Gagal menghapus data", "error");
+      showToast(error.response?.data?.message || "Gagal menghapus data", "error");
     }
   };
 
   const getBannerImageUrl = (imageUrl) => {
     if (!imageUrl) return '/images/placeholder-banner.png';
-    if (imageUrl.startsWith('http')) return imageUrl;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
-    const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-    return `${baseUrl}${cleanPath}`;
+    return imageUrl;
   };
 
   const whatsappContacts = contacts.filter(c => c.platform === 'WhatsApp');
@@ -283,7 +417,6 @@ export default function ContentDisplay({ token }) {
       )}
 
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h1 className="text-2xl font-bold text-gray-800">Manajemen Konten</h1>
           <p className="text-gray-600 mt-1">Kelola kontak, rekening, dan banner website</p>
@@ -531,20 +664,34 @@ export default function ContentDisplay({ token }) {
           </div>
         </div>
 
-        {/* Banner Section */}
+        {/* Banner Section with Drag & Drop */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3 text-white">
               <ImageIcon size={24} />
-              <h2 className="text-lg font-semibold">Banner</h2>
+              <div>
+                <h2 className="text-lg font-semibold">Banner ({banners.length})</h2>
+                <p className="text-xs text-white/80">Drag untuk mengatur urutan</p>
+              </div>
             </div>
-            <button
-              onClick={() => openModal('banner')}
-              className="bg-white text-orange-600 px-4 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors flex items-center gap-2"
-            >
-              <Plus size={18} />
-              Tambah
-            </button>
+            <div className="flex items-center gap-2">
+              {isSavingOrder && (
+                <span className="text-white text-sm flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Saving...
+                </span>
+              )}
+              <button
+                onClick={() => openModal('banner')}
+                className="bg-white text-orange-600 px-4 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Tambah
+              </button>
+            </div>
           </div>
 
           <div className="p-4">
@@ -554,32 +701,30 @@ export default function ContentDisplay({ token }) {
                 <p>Belum ada banner</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {banners.map((banner) => (
-                  <div key={banner.id} className="relative rounded-lg overflow-hidden border-2 border-gray-200 group">
-                    <img
-                      src={getBannerImageUrl(banner.imageUrl)}
-                      alt={banner.title}
-                      className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/images/placeholder-banner.png';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
-                      <p className="text-white font-semibold">{banner.title}</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setDeleteTarget({ type: 'banner', id: banner.id });
-                        setConfirmOpen(true);
-                      }}
-                      className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={banners.map(b => b.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {banners.map((banner) => (
+                      <SortableBannerItem
+                        key={banner.id}
+                        banner={banner}
+                        onDelete={(banner) => {
+                          setDeleteTarget({ type: 'banner', id: banner.id });
+                          setConfirmOpen(true);
+                        }}
+                        getBannerImageUrl={getBannerImageUrl}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         </div>
