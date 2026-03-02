@@ -1,7 +1,6 @@
 'use client'
 
 import adminIcon from "@/assets/icons/loginIcons/human-white.png";
-import ConfirmPopup from "../components/modal/modalConfirm";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -34,6 +33,7 @@ const handleSubmit = async (e) => {
         localStorage.setItem('admin_token', token);
         localStorage.setItem('adminId', data.id);
         localStorage.setItem('adminName', data.name);
+        localStorage.setItem('adminRole', data.role); // ✅ TAMBAHAN: simpan role
 
         setFormData({ email: "", password: "" });
 
