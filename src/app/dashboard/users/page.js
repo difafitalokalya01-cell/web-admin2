@@ -8,14 +8,19 @@ export default function UserPage() {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [adminRole, setAdminRole] = useState(null);
+
+  useEffect(() => {
+    // ✅ Ambil role dari localStorage
+    const role = localStorage.getItem('adminRole');
+    setAdminRole(role);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        
         const res = await axios.get('/api/admin/users');
-        
         setData(res.data?.usersData || []);
         setError(null);
       } catch (error) {
@@ -53,7 +58,7 @@ export default function UserPage() {
 
   return (
     <section className="h-full">
-      <ContentUserPage initialData={data} />
+      <ContentUserPage initialData={data} adminRole={adminRole} />
     </section>
   );
 }
