@@ -23,7 +23,7 @@ const fetcher = async (url) => {
   }
 };
 
-export default function ContentUserPage({ initialData = [] }) {
+export default function ContentUserPage({ initialData = [], adminRole }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -35,17 +35,14 @@ export default function ContentUserPage({ initialData = [] }) {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [shouldFetch, setShouldFetch] = useState(true);
 
+  // ✅ Cek apakah user adalah subadmin
+  const isSubAdmin = adminRole === 'subadmin';
+
   useEffect(() => {
     const handleVisibilityChange = () => {
       const isVisible = document.visibilityState === 'visible';
       setIsPageVisible(isVisible);
       setShouldFetch(isVisible);
-      
-      if (isVisible) {
-        console.log('👀 User kembali ke halaman - mulai fetch');
-      } else {
-        console.log('😴 User meninggalkan halaman - stop fetch');
-      }
     };
 
     setIsPageVisible(document.visibilityState === 'visible');
@@ -72,19 +69,13 @@ export default function ContentUserPage({ initialData = [] }) {
       onError: (err) => {
         console.error('❌ SWR Error:', err);
         
-        // ✅ Handle 401: stop fetch & redirect ke login
         if (err.response?.status === 401) {
           console.error('❌ Token expired, redirecting to login');
-          
-          // Stop auto-refresh
           setShouldFetch(false);
-          
-          // Hapus token
           localStorage.removeItem('admin_token');
           localStorage.removeItem('adminId');
           localStorage.removeItem('adminName');
-          
-          // Redirect ke login setelah delay
+          localStorage.removeItem('adminRole');
           setTimeout(() => {
             window.location.href = '/login';
           }, 1000);
@@ -94,7 +85,6 @@ export default function ContentUserPage({ initialData = [] }) {
   );
 
   const [users, setUsers] = useState(() => usersData ?? initialData ?? []);
-  console.log(users);
 
   useEffect(() => {
     if (usersData) {
@@ -137,7 +127,7 @@ export default function ContentUserPage({ initialData = [] }) {
   };
 
   const handleDelete = (e, userId) => {
-    e.stopPropagation(); // Prevent row click when delete button is clicked
+    e.stopPropagation();
     setUserToDelete(userId);
     setIsConfirmOpen(true);
   };
@@ -212,9 +202,6 @@ export default function ContentUserPage({ initialData = [] }) {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             <p className="font-semibold">⚠️ Gagal memuat data</p>
             <p className="text-sm mt-1">{error.message}</p>
-            {error.response?.status === 401 && (
-              <p className="text-sm mt-2">Redirecting to login...</p>
-            )}
           </div>
         </div>
       </div>
@@ -268,17 +255,6 @@ export default function ContentUserPage({ initialData = [] }) {
           </div>
         </div>
 
-        {!isPageVisible && (
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4 flex items-center gap-3">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <p className="text-sm">
-              Auto-refresh dinonaktifkan karena Anda tidak berada di halaman ini. Kembali ke tab ini untuk melanjutkan.
-            </p>
-          </div>
-        )}
-
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -294,14 +270,15 @@ export default function ContentUserPage({ initialData = [] }) {
                   <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Provider</th>
                   <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Bank Akun</th>
                   <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Terdaftar</th>
-                  <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                  {/* ✅ Kolom Aksi hanya tampil jika bukan subadmin */}
+                  {!isSubAdmin && (
+                    <th className="px-4 py-3 text-center font-semibold whitespace-nowrap">Aksi</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {displayUsers.map((user, index) => {
                   const globalIndex = pagesVisited + index + 1;
-
-                  console.log(user);
 
                   return (
                     <tr
@@ -370,19 +347,22 @@ export default function ContentUserPage({ initialData = [] }) {
                       <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
                         {formatDate(user.createdAt)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex justify-center gap-2">
-                          <button
-                            onClick={(e) => handleDelete(e, user.id)}
-                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
-                            title="Hapus user"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
+                      {/* ✅ Tombol hapus hanya tampil jika bukan subadmin */}
+                      {!isSubAdmin && (
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={(e) => handleDelete(e, user.id)}
+                              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-md transition active:scale-95 shadow-sm hover:shadow-md"
+                              title="Hapus user"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -441,6 +421,7 @@ export default function ContentUserPage({ initialData = [] }) {
           onClose={handleCloseModal}
           onDeleteClick={handleDelete}
           onMutate={mutate}
+          adminRole={adminRole}
         />
       )}
 
