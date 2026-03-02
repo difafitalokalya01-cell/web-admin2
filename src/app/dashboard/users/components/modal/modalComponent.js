@@ -21,9 +21,12 @@ import {
 
 import ProfileIcon from "@/assets/icons/loginIcons/user.png";
 
-export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMutate }) {
+export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMutate, adminRole }) {
   const [isOpenModal, setIsOpenModal] = useState(false);
   if (!user) return null;
+
+  // ✅ Cek apakah subadmin
+  const isSubAdmin = adminRole === 'subadmin';
 
   const handleEdit = () => setIsOpenModal(true);
 
@@ -34,7 +37,6 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
 
   const handleLock = () => {
     if (confirm('Apakah Anda yakin ingin mengunci akun ini? Pengguna tidak akan bisa login.')) {
-      // TODO: API call untuk lock akun
       console.log('Lock account:', user.id);
       onClose();
     }
@@ -42,7 +44,6 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
 
   const handleFreezeBank = () => {
     if (confirm('Apakah Anda yakin ingin membekukan rekening bank terkait akun ini?')) {
-      // TODO: API call untuk freeze bank account
       console.log('Freeze bank account:', user.id);
       onClose();
     }
@@ -103,7 +104,6 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
           <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
             {/* Profile Section */}
             <div className="flex flex-col md:flex-row gap-6 mb-6 pb-6 border-b border-gray-200">
-              {/* Profile Picture & Basic Info */}
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
                   <img
@@ -128,42 +128,13 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
                 </div>
               </div>
 
-              {/* User Basic Info Grid */}
               <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoCard 
-                  icon={EnvelopeIcon}
-                  label="Email"
-                  value={user.email}
-                />
-                <InfoCard 
-                  icon={PhoneIcon}
-                  label="Nomor HP"
-                  value={user.phone || 'Belum diisi'}
-                />
-                <InfoCard 
-                  icon={CurrencyDollarIcon}
-                  label="Saldo"
-                  value={formatCurrency(user.balance)}
-                  valueClass="text-green-600 font-bold text-lg"
-                />
-                <InfoCard 
-                  icon={ShieldCheckIcon}
-                  label="Provider"
-                  value={(user.provider || 'local').toUpperCase()}
-                  badge={user.provider === 'google' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}
-                />
-                <InfoCard 
-                  icon={KeyIcon}
-                  label="Provider ID"
-                  value={user.providerId || '—'}
-                  valueClass="font-mono text-xs"
-                />
-                <InfoCard 
-                  icon={KeyIcon}
-                  label="Password"
-                  value={user.password ? '••••••••' : 'Login via ' + (user.provider || 'Provider')}
-                  valueClass="text-xs"
-                />
+                <InfoCard icon={EnvelopeIcon} label="Email" value={user.email} />
+                <InfoCard icon={PhoneIcon} label="Nomor HP" value={user.phone || 'Belum diisi'} />
+                <InfoCard icon={CurrencyDollarIcon} label="Saldo" value={formatCurrency(user.balance)} valueClass="text-green-600 font-bold text-lg" />
+                <InfoCard icon={ShieldCheckIcon} label="Provider" value={(user.provider || 'local').toUpperCase()} badge={user.provider === 'google' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'} />
+                <InfoCard icon={KeyIcon} label="Provider ID" value={user.providerId || '—'} valueClass="font-mono text-xs" />
+                <InfoCard icon={KeyIcon} label="Password" value={user.password ? '••••••••' : 'Login via ' + (user.provider || 'Provider')} valueClass="text-xs" />
               </div>
             </div>
 
@@ -175,27 +146,10 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
                   Level & Statistik
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <StatCard
-                    label="Level Saat Ini"
-                    value={user.userLevel.currentLevel}
-                    color="blue"
-                  />
-                  <StatCard
-                    label="Total Task"
-                    value={user.userLevel.totalTasks}
-                    color="green"
-                  />
-                  <StatCard
-                    label="Total Komisi"
-                    value={formatCurrency(user.userLevel.totalCommission)}
-                    color="purple"
-                  />
-                  <StatCard
-                    label="Level Update"
-                    value={formatDate(user.userLevel.levelUpdatedAt)}
-                    color="gray"
-                    small
-                  />
+                  <StatCard label="Level Saat Ini" value={user.userLevel.currentLevel} color="blue" />
+                  <StatCard label="Total Task" value={user.userLevel.totalTasks} color="green" />
+                  <StatCard label="Total Komisi" value={formatCurrency(user.userLevel.totalCommission)} color="purple" />
+                  <StatCard label="Level Update" value={formatDate(user.userLevel.levelUpdatedAt)} color="gray" small />
                 </div>
               </div>
             )}
@@ -212,18 +166,10 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
                     <div key={bank.id} className="p-4 border-2 border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 bg-blue-600 text-white font-bold text-xs rounded-full">
-                            {bank.bank}
-                          </span>
-                          {bank.isDefault && (
-                            <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                              Default
-                            </span>
-                          )}
+                          <span className="px-3 py-1 bg-blue-600 text-white font-bold text-xs rounded-full">{bank.bank}</span>
+                          {bank.isDefault && <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full">Default</span>}
                         </div>
-                        <span className="text-xs text-gray-500">
-                          {bank.accountType}
-                        </span>
+                        <span className="text-xs text-gray-500">{bank.accountType}</span>
                       </div>
                       <div className="space-y-2">
                         <div>
@@ -295,30 +241,13 @@ export default function ModalBoxDataUsers({ user, onClose, onDeleteClick, onMuta
           {/* Action Buttons */}
           <div className="px-6 pb-6">
             <div className="flex flex-wrap justify-center gap-3">
-              <ActionButton
-                onClick={handleEdit}
-                Icon={PencilIcon}
-                label="Edit Akun"
-                color="blue"
-              />
-              <ActionButton
-                onClick={handleDelete}
-                Icon={TrashIcon}
-                label="Hapus Akun"
-                color="red"
-              />
-              <ActionButton
-                onClick={handleLock}
-                Icon={LockClosedIcon}
-                label="Kunci Akun"
-                color="yellow"
-              />
-              <ActionButton
-                onClick={handleFreezeBank}
-                Icon={BanknotesIcon}
-                label="Bekukan Bank"
-                color="purple"
-              />
+              <ActionButton onClick={handleEdit} Icon={PencilIcon} label="Edit Akun" color="blue" />
+              {/* ✅ Tombol Hapus hanya muncul untuk admin biasa, bukan subadmin */}
+              {!isSubAdmin && (
+                <ActionButton onClick={handleDelete} Icon={TrashIcon} label="Hapus Akun" color="red" />
+              )}
+              <ActionButton onClick={handleLock} Icon={LockClosedIcon} label="Kunci Akun" color="yellow" />
+              <ActionButton onClick={handleFreezeBank} Icon={BanknotesIcon} label="Bekukan Bank" color="purple" />
             </div>
           </div>
         </div>
